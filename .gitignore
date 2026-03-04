@@ -11,6 +11,7 @@ agent_pack.tgz
 .pytest_cache/
 .ruff_cache/
 htmlcov/
+*.clirec
 
 # PairCoder — ephemeral/session data
 .paircoder/.cli_version
