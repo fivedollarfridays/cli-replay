@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "cli-replay"
@@ -11,5 +11,15 @@ requires-python = ">=3.11"
 [project.scripts]
 clirec = "cli_replay.cli:main"
 
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.4", "mypy>=1.10"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+exclude = [".claude", ".paircoder"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true

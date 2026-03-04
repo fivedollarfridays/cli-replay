@@ -1,5 +1,31 @@
 """.clirec -> stdout with timing."""
 
+from __future__ import annotations
+
+import sys
+import time
+
+from cli_replay.session import EVENT_INPUT, iter_events, read_header
+
+
+def _compute_delay(
+    current_t: float,
+    prev_t: float,
+    speed: float,
+    max_delay: float,
+    instant: bool,
+) -> float:
+    """Calculate the delay before playing an event."""
+    if instant:
+        return 0.0
+    gap = max((current_t - prev_t) / speed, 0.0)
+    return min(gap, max_delay)
+
+
+def _should_skip(event_type: str, no_input: bool) -> bool:
+    """Return True if this event should be skipped."""
+    return no_input and event_type == EVENT_INPUT
+
 
 def play(
     *,
@@ -9,4 +35,16 @@ def play(
     no_input: bool = False,
     instant: bool = False,
 ) -> None:
-    raise NotImplementedError
+    """Replay a .clirec session to stdout with timing."""
+    with open(filepath) as f:
+        read_header(f)  # validate header, not used in v1
+        prev_t = 0.0
+        for event in iter_events(f):
+            if _should_skip(event["type"], no_input):
+                continue
+            delay = _compute_delay(event["t"], prev_t, speed, max_delay, instant)
+            if delay > 0:
+                time.sleep(delay)
+            sys.stdout.write(event["data"])
+            sys.stdout.flush()
+            prev_t = event["t"]
