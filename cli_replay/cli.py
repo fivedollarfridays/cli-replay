@@ -15,6 +15,14 @@ def _validate_play_args(args: argparse.Namespace) -> None:
         raise ValueError("speed must be > 0")
     if args.max_delay < 0:
         raise ValueError("max-delay must be >= 0")
+    if args.line_delay < 0:
+        raise ValueError("line-delay must be >= 0")
+
+
+def _validate_reflow_args(args: argparse.Namespace) -> None:
+    """Validate reflow subcommand arguments."""
+    if args.delay <= 0:
+        raise ValueError("delay must be > 0")
 
 
 def _run(args: argparse.Namespace) -> None:
@@ -35,7 +43,18 @@ def _run(args: argparse.Namespace) -> None:
                 max_delay=args.max_delay,
                 no_input=args.no_input,
                 instant=args.instant,
+                line_delay=args.line_delay,
             )
+        elif args.command == "reflow":
+            _validate_reflow_args(args)
+
+            from cli_replay.reflow import reflow
+
+            if args.output:
+                with open(args.output, "w") as out:
+                    reflow(filepath=args.file, output=out, delay_ms=args.delay)
+            else:
+                reflow(filepath=args.file, output=sys.stdout, delay_ms=args.delay)
     except KeyboardInterrupt:
         sys.exit(130)
     except FileNotFoundError as e:
@@ -78,6 +97,16 @@ def main() -> None:
     )
     play_parser.add_argument(
         "--instant", action="store_true", help="Ignore timing, dump immediately"
+    )
+    play_parser.add_argument(
+        "--line-delay", type=int, default=0, help="Delay between lines in ms"
+    )
+
+    reflow_parser = sub.add_parser("reflow", help="Reflow a recorded session")
+    reflow_parser.add_argument("file", help="Path to .clirec file")
+    reflow_parser.add_argument("-o", "--output", help="Output file (default: stdout)")
+    reflow_parser.add_argument(
+        "--delay", type=int, default=40, help="Delay between lines in ms (default: 40)"
     )
 
     args = parser.parse_args()

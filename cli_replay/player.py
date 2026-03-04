@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 import time
 
+from cli_replay.reflow import split_lines
 from cli_replay.session import EVENT_INPUT, iter_events, read_header
 
 
@@ -27,6 +28,16 @@ def _should_skip(event_type: str, no_input: bool) -> bool:
     return no_input and event_type == EVENT_INPUT
 
 
+def _write_with_line_delay(data: str, delay_s: float) -> None:
+    """Write data line-by-line with micro-delays between lines."""
+    lines = split_lines(data)
+    for i, line in enumerate(lines):
+        if i > 0:
+            time.sleep(delay_s)
+        sys.stdout.write(line)
+        sys.stdout.flush()
+
+
 def play(
     *,
     filepath: str,
@@ -34,8 +45,10 @@ def play(
     max_delay: float = 3.0,
     no_input: bool = False,
     instant: bool = False,
+    line_delay: int = 0,
 ) -> None:
     """Replay a .clirec session to stdout with timing."""
+    line_delay_s = line_delay / 1000.0
     with open(filepath) as f:
         read_header(f)  # validate header, not used in v1
         prev_t = 0.0
@@ -45,6 +58,9 @@ def play(
             delay = _compute_delay(event["t"], prev_t, speed, max_delay, instant)
             if delay > 0:
                 time.sleep(delay)
-            sys.stdout.write(event["data"])
-            sys.stdout.flush()
+            if line_delay_s > 0:
+                _write_with_line_delay(event["data"], line_delay_s)
+            else:
+                sys.stdout.write(event["data"])
+                sys.stdout.flush()
             prev_t = event["t"]

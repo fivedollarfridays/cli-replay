@@ -48,11 +48,16 @@ def validate_task_file(filepath: str) -> tuple[bool, list[str]]:
     if status_match:
         status = status_match.group(1)
         if status not in valid_statuses:
-            errors.append(f"Invalid status '{status}'. Must be one of: {valid_statuses}")
+            errors.append(
+                f"Invalid status '{status}'. Must be one of: {valid_statuses}"
+            )
 
     # Check for acceptance criteria section
     body = parts[2] if len(parts) > 2 else ""
-    if "## Acceptance Criteria" not in body and "## acceptance criteria" not in body.lower():
+    if (
+        "## Acceptance Criteria" not in body
+        and "## acceptance criteria" not in body.lower()
+    ):
         errors.append("Missing '## Acceptance Criteria' section")
 
     return len(errors) == 0, errors

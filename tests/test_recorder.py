@@ -26,10 +26,22 @@ from cli_replay.recorder import (
 
 
 class TestGenerateFilename:
+    def test_default_saves_to_data_dir(self):
+        name = _generate_filename(None)
+        assert "/.local/share/clirec/" in name
+        assert name.endswith(".clirec")
+
+    def test_default_creates_dir(self, tmp_path):
+        data_dir = tmp_path / "clirec"
+        with patch("cli_replay.recorder._get_save_dir", return_value=str(data_dir)):
+            name = _generate_filename(None)
+        assert data_dir.is_dir()
+        assert name.startswith(str(data_dir))
+
     def test_default_timestamp_format(self):
         name = _generate_filename(None)
-        assert name.endswith(".clirec")
-        stem = name.removesuffix(".clirec")
+        basename = os.path.basename(name)
+        stem = basename.removesuffix(".clirec")
         parts = stem.split("_")
         assert len(parts) == 2
         assert len(parts[0]) == 10  # YYYY-MM-DD

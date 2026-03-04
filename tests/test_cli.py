@@ -19,6 +19,7 @@ class TestPlayArgParsing:
                     max_delay=3.0,
                     no_input=False,
                     instant=False,
+                    line_delay=0,
                 )
 
     def test_all_flags(self):
@@ -33,6 +34,8 @@ class TestPlayArgParsing:
                 "5.0",
                 "--no-input",
                 "--instant",
+                "--line-delay",
+                "50",
                 "demo.clirec",
             ],
         ):
@@ -44,6 +47,7 @@ class TestPlayArgParsing:
                     max_delay=5.0,
                     no_input=True,
                     instant=True,
+                    line_delay=50,
                 )
 
 
@@ -123,6 +127,13 @@ class TestErrorHandling:
                     main()
                 assert "max-delay" in mock_err.getvalue()
 
+    def test_line_delay_negative_rejected(self):
+        with patch("sys.argv", ["clirec", "play", "--line-delay", "-1", "f.clirec"]):
+            with patch("sys.stderr", new_callable=io.StringIO) as mock_err:
+                with pytest.raises(SystemExit, match="1"):
+                    main()
+                assert "line-delay" in mock_err.getvalue()
+
 
 class TestSigpipe:
     def test_sigpipe_set_on_posix(self):
@@ -143,6 +154,34 @@ class TestSigpipe:
                 del mock_signal.SIGPIPE
                 main()
                 mock_signal.signal.assert_not_called()
+
+
+class TestReflowArgParsing:
+    def test_defaults(self):
+        with patch("sys.argv", ["clirec", "reflow", "test.clirec"]):
+            with patch("cli_replay.reflow.reflow") as mock_reflow:
+                main()
+                args = mock_reflow.call_args
+                assert args.kwargs["filepath"] == "test.clirec"
+                assert args.kwargs["delay_ms"] == 40
+
+    def test_with_output_and_delay(self, tmp_path):
+        out = str(tmp_path / "out.clirec")
+        with patch(
+            "sys.argv", ["clirec", "reflow", "--delay", "60", "-o", out, "test.clirec"]
+        ):
+            with patch("cli_replay.reflow.reflow") as mock_reflow:
+                main()
+                args = mock_reflow.call_args
+                assert args.kwargs["filepath"] == "test.clirec"
+                assert args.kwargs["delay_ms"] == 60
+
+    def test_delay_zero_rejected(self):
+        with patch("sys.argv", ["clirec", "reflow", "--delay", "0", "f.clirec"]):
+            with patch("sys.stderr", new_callable=io.StringIO) as mock_err:
+                with pytest.raises(SystemExit, match="1"):
+                    main()
+                assert "delay" in mock_err.getvalue()
 
 
 class TestEndToEnd:

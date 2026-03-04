@@ -123,3 +123,80 @@ class TestPlay:
             )
         output = capsys.readouterr().out
         assert output == ""
+
+
+# --- line_delay ---
+
+
+class TestLineDelay:
+    def test_zero_no_effect(self, fixture_dir, capsys):
+        """line_delay=0 produces identical output to default."""
+        with patch("cli_replay.player.time") as mock_time:
+            mock_time.sleep = lambda _: None
+            play(
+                filepath=str(fixture_dir / "sample.clirec"),
+                speed=1.0,
+                max_delay=3.0,
+                no_input=False,
+                instant=True,
+                line_delay=0,
+            )
+        output = capsys.readouterr().out
+        assert "hello" in output
+
+    def test_multiline_splits_output(self, tmp_path, capsys):
+        """Multi-line event is written line-by-line with delay."""
+        f = tmp_path / "multi.clirec"
+        f.write_text(
+            '{"version": 1, "timestamp": "2026-01-01T00:00:00Z", "width": 80, "height": 24}\n'
+            '{"t": 0.0, "type": "o", "data": "line1\\nline2\\n"}\n'
+        )
+        sleep_calls: list[float] = []
+        with patch("cli_replay.player.time") as mock_time:
+            mock_time.sleep = lambda s: sleep_calls.append(s)
+            play(
+                filepath=str(f),
+                instant=True,
+                line_delay=50,
+            )
+        output = capsys.readouterr().out
+        assert output == "line1\nline2\n"
+        # Should sleep 0.05s between lines (once — between line1 and line2)
+        assert 0.05 in sleep_calls
+
+    def test_single_line_no_extra_sleep(self, tmp_path, capsys):
+        """Single-line event with line_delay doesn't add extra sleeps."""
+        f = tmp_path / "single.clirec"
+        f.write_text(
+            '{"version": 1, "timestamp": "2026-01-01T00:00:00Z", "width": 80, "height": 24}\n'
+            '{"t": 0.0, "type": "o", "data": "hello"}\n'
+        )
+        sleep_calls: list[float] = []
+        with patch("cli_replay.player.time") as mock_time:
+            mock_time.sleep = lambda s: sleep_calls.append(s)
+            play(
+                filepath=str(f),
+                instant=True,
+                line_delay=50,
+            )
+        output = capsys.readouterr().out
+        assert output == "hello"
+        # No inter-line sleeps for single-line event
+        assert 0.05 not in sleep_calls
+
+    def test_applies_to_input_events(self, tmp_path, capsys):
+        """line_delay also applies to input events."""
+        f = tmp_path / "input.clirec"
+        f.write_text(
+            '{"version": 1, "timestamp": "2026-01-01T00:00:00Z", "width": 80, "height": 24}\n'
+            '{"t": 0.0, "type": "i", "data": "cmd1\\ncmd2\\n"}\n'
+        )
+        sleep_calls: list[float] = []
+        with patch("cli_replay.player.time") as mock_time:
+            mock_time.sleep = lambda s: sleep_calls.append(s)
+            play(
+                filepath=str(f),
+                instant=True,
+                line_delay=40,
+            )
+        assert 0.04 in sleep_calls

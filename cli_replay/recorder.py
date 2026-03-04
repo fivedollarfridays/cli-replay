@@ -28,6 +28,11 @@ from cli_replay.session import (
 )
 
 
+def _get_save_dir() -> str:
+    """Return the default save directory for recordings."""
+    return os.path.join(os.path.expanduser("~"), ".local", "share", "clirec")
+
+
 def _generate_filename(output: str | None) -> str:
     """Generate a .clirec filename from user input or timestamp."""
     if output is not None:
@@ -37,8 +42,10 @@ def _generate_filename(output: str | None) -> str:
         if not name.endswith(".clirec"):
             name += ".clirec"
         return name
+    save_dir = _get_save_dir()
+    os.makedirs(save_dir, exist_ok=True)
     now = datetime.now(timezone.utc)
-    return now.strftime("%Y-%m-%d_%H%M%S") + ".clirec"
+    return os.path.join(save_dir, now.strftime("%Y-%m-%d_%H%M%S") + ".clirec")
 
 
 def _build_header() -> SessionHeader:
