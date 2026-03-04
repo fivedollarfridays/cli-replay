@@ -6,6 +6,7 @@ import fcntl
 import os
 import pty
 import select
+import signal
 import struct
 import subprocess
 import sys
@@ -13,7 +14,8 @@ import termios
 import time
 import tty
 from datetime import datetime, timezone
-from typing import IO
+from types import FrameType
+from typing import IO, Callable
 
 from cli_replay.session import (
     EVENT_INPUT,
@@ -30,6 +32,8 @@ def _generate_filename(output: str | None) -> str:
     """Generate a .clirec filename from user input or timestamp."""
     if output is not None:
         name = output.strip()
+        if not name:
+            raise ValueError("output name cannot be empty or whitespace-only")
         if not name.endswith(".clirec"):
             name += ".clirec"
         return name
@@ -117,6 +121,22 @@ def _print_summary(filename: str, event_count: int, duration: float) -> None:
     sys.stderr.flush()
 
 
+_SignalHandler = Callable[[int, FrameType | None], object] | int | None
+
+
+def _install_sigwinch(master_fd: int) -> _SignalHandler:
+    """Install SIGWINCH handler for PTY resize. Returns old handler."""
+
+    def handler(signum: int, frame: FrameType | None) -> None:
+        try:
+            size = os.get_terminal_size()
+            _set_pty_size(master_fd, size.columns, size.lines)
+        except OSError:
+            pass
+
+    return signal.signal(signal.SIGWINCH, handler)
+
+
 def record(*, output: str | None = None) -> None:
     """Record a terminal session to a .clirec file."""
     filename = _generate_filename(output)
@@ -124,6 +144,7 @@ def record(*, output: str | None = None) -> None:
 
     master_fd, slave_fd = pty.openpty()
     _set_pty_size(master_fd, header["width"], header["height"])
+    old_sigwinch = _install_sigwinch(master_fd)
 
     shell = os.environ.get("SHELL", "/bin/sh")
     proc = subprocess.Popen(
@@ -150,6 +171,7 @@ def record(*, output: str | None = None) -> None:
             write_header(f, header)
             event_count = _record_loop(stdin_fd, master_fd, proc, f, start)
     finally:
+        signal.signal(signal.SIGWINCH, old_sigwinch)
         if old_settings is not None:
             termios.tcsetattr(stdin_fd, termios.TCSADRAIN, old_settings)
         os.close(master_fd)

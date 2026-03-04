@@ -55,6 +55,36 @@ class TestValidateHeader:
         with pytest.raises(ValueError):
             validate_header({})
 
+    def test_rejects_string_version(self, sample_header):
+        sample_header["version"] = "1"
+        with pytest.raises(ValueError, match="version"):
+            validate_header(sample_header)
+
+    def test_rejects_bool_version(self, sample_header):
+        sample_header["version"] = True
+        with pytest.raises(ValueError, match="version"):
+            validate_header(sample_header)
+
+    def test_rejects_string_width(self, sample_header):
+        sample_header["width"] = "80"
+        with pytest.raises(ValueError, match="width"):
+            validate_header(sample_header)
+
+    def test_rejects_zero_width(self, sample_header):
+        sample_header["width"] = 0
+        with pytest.raises(ValueError, match="width"):
+            validate_header(sample_header)
+
+    def test_rejects_negative_height(self, sample_header):
+        sample_header["height"] = -1
+        with pytest.raises(ValueError, match="height"):
+            validate_header(sample_header)
+
+    def test_rejects_non_string_timestamp(self, sample_header):
+        sample_header["timestamp"] = 12345
+        with pytest.raises(ValueError, match="timestamp"):
+            validate_header(sample_header)
+
 
 # --- validate_event ---
 
@@ -91,6 +121,22 @@ class TestValidateEvent:
     def test_rejects_empty_dict(self):
         with pytest.raises(ValueError):
             validate_event({})
+
+    def test_rejects_string_t(self):
+        with pytest.raises(ValueError, match="t"):
+            validate_event({"t": "0.5", "type": "o", "data": "x"})
+
+    def test_rejects_negative_t(self):
+        with pytest.raises(ValueError, match="t"):
+            validate_event({"t": -0.1, "type": "o", "data": "x"})
+
+    def test_accepts_int_t_zero(self):
+        result = validate_event({"t": 0, "type": "o", "data": "x"})
+        assert result["t"] == 0
+
+    def test_rejects_non_string_data(self):
+        with pytest.raises(ValueError, match="data"):
+            validate_event({"t": 0.0, "type": "o", "data": 42})
 
 
 # --- write_header ---

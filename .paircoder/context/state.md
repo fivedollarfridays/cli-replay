@@ -4,18 +4,18 @@
 
 ## Active Plan
 
-**Plan:** plan-2026-03-clireplay-v1
-**Title:** CLIReplay v1.0 — Record and Replay CLI Sessions
-**Status:** In Progress
-**Type:** feature
+**Plan:** plan-2026-03-plan-2026-03-clireplay-hardening
+**Title:** cli-replay v1.0 Hardening (P1-P4)
+**Status:** Complete
+**Type:** chore
 
 ## Current Focus
 
-Implementing CLIReplay v1.0 — record and replay CLI sessions at any terminal size.
+All hardening tasks complete. Ready for commit and push.
 
 ## Task Status
 
-### Sprint 1
+### Sprint 1 (Complete)
 
 | Task | Description | Status | Cx |
 |------|-------------|--------|-----|
@@ -25,51 +25,29 @@ Implementing CLIReplay v1.0 — record and replay CLI sessions at any terminal s
 | T1.4 | Player: replay with timing controls | ✅ done | 40 |
 | T1.5 | CLI integration tests | ✅ done | 30 |
 
-### Dependencies
-- T1.2 → T1.1
-- T1.3 → T1.1
-- T1.4 → T1.2
-- T1.5 → T1.3, T1.4
+### Sprint 2 (Complete)
+
+| Task | Description | Status | Cx |
+|------|-------------|--------|-----|
+| T2.5 | Packaging polish: py.typed, .gitignore, pyproject.toml, version, CI | ✅ done | 10 |
+| T2.2 | Session validation type hardening + filename edge case | ✅ done | 25 |
+| T2.1 | CLI robustness: --version, error handling, speed validation | ✅ done | 35 |
+| T2.3 | SIGPIPE / BrokenPipeError handling | ✅ done | 10 |
+| T2.4 | SIGWINCH handling in recorder | ✅ done | 25 |
 
 ## What Was Just Done
 
-- **T1.5 done** (auto-updated by hook)
+- **T2.4 done** (auto-updated by hook)
 
-- **T1.5 done** — 7 CLI tests, 60 total tests pass, pip install works, fixed pyproject.toml build backend
-- **T1.3 done** (auto-updated by hook)
-
-- **T1.3 done** — recorder with PTY capture, select loop, 8 tests pass
-- **T1.4 done** (auto-updated by hook)
-
-- **T1.4 done** — player with _compute_delay, _should_skip, play(), 15 tests pass
-- **T1.2 done** (auto-updated by hook)
-
-- **T1.2 done** — read_header, iter_events, 3 fixture files, 30 tests pass
-- **T1.1 done** (auto-updated by hook)
-
-### Session: 2026-03-04 - Project Initialization
-
-- Initialized project with PairCoder v2
-- Created `.paircoder/` directory structure
-- Set up initial configuration
-
-### Session: 2026-03-04 - T1.1 Complete
-
-- Implemented `SessionHeader` and `SessionEvent` TypedDicts in `session.py`
-- Implemented `validate_header`, `validate_event`, `write_header`, `write_event`
-- Created `tests/conftest.py` with shared fixtures
-- Created `tests/test_session.py` with 19 passing tests
-- Arch check passes
-
-### Session: 2026-03-04 - Planning
-
-- Created plan `plan-2026-03-clireplay-v1` with 5 tasks
-- Wrote detailed acceptance criteria for all tasks
-- Established dependency graph
+- **T2.4 done** — _install_sigwinch helper, SIGWINCH handler with PTY resize, 3 new tests (96 total)
+- **T2.3 done** — SIGPIPE → SIG_DFL in main(), 2 new tests
+- **T2.1 done** — restructured cli.py, --version, error handling, speed validation, 6 new tests
+- **T2.2 done** — type checks in validate_header/validate_event, _generate_filename rejects empty names
+- **T2.5 done** — py.typed marker, importlib.metadata version, pyproject.toml metadata, .gitignore gaps
 
 ## What's Next
 
-All tasks complete. CLIReplay v1.0 is ready for use.
+All sprint 2 tasks complete. 96 tests, 100% coverage, all checks green.
 
 ## Blockers
 

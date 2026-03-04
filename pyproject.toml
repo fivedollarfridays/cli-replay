@@ -7,12 +7,29 @@ name = "cli-replay"
 version = "0.1.0"
 description = "Record and replay CLI sessions at any terminal size"
 requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Environment :: Console",
+    "Topic :: System :: Logging",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/fivedollarfridays/cli-replay"
+Source = "https://github.com/fivedollarfridays/cli-replay"
+Issues = "https://github.com/fivedollarfridays/cli-replay/issues"
 
 [project.scripts]
 clirec = "cli_replay.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.4", "mypy>=1.10"]
+
+[tool.setuptools.package-data]
+cli_replay = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

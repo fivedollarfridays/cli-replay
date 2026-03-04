@@ -1,5 +1,6 @@
 """Tests for cli_replay.cli — CLI entry point integration tests."""
 
+import io
 from unittest.mock import patch
 
 import pytest
@@ -68,6 +69,82 @@ class TestNoSubcommand:
         assert "record" in output or "play" in output
 
 
+class TestVersion:
+    def test_version_flag(self, capsys):
+        with patch("sys.argv", ["clirec", "--version"]):
+            with pytest.raises(SystemExit, match="0"):
+                main()
+        output = capsys.readouterr().out
+        assert "clirec" in output
+        assert "0.1.0" in output
+
+
+class TestErrorHandling:
+    def test_missing_file_exits_cleanly(self):
+        with patch("sys.argv", ["clirec", "play", "/nonexistent.clirec"]):
+            with patch("sys.stderr", new_callable=io.StringIO) as mock_err:
+                with pytest.raises(SystemExit, match="1"):
+                    main()
+                assert "error:" in mock_err.getvalue()
+
+    def test_value_error_exits_cleanly(self):
+        with patch("sys.argv", ["clirec", "play", "test.clirec"]):
+            with patch("cli_replay.player.play", side_effect=ValueError("bad file")):
+                with patch("sys.stderr", new_callable=io.StringIO) as mock_err:
+                    with pytest.raises(SystemExit, match="1"):
+                        main()
+                    assert "bad file" in mock_err.getvalue()
+
+    def test_keyboard_interrupt_exits_130(self):
+        with patch("sys.argv", ["clirec", "record"]):
+            with patch("cli_replay.recorder.record", side_effect=KeyboardInterrupt):
+                with pytest.raises(SystemExit) as exc_info:
+                    main()
+                assert exc_info.value.code == 130
+
+    def test_speed_zero_rejected(self):
+        with patch("sys.argv", ["clirec", "play", "--speed", "0", "f.clirec"]):
+            with patch("sys.stderr", new_callable=io.StringIO) as mock_err:
+                with pytest.raises(SystemExit, match="1"):
+                    main()
+                assert "speed" in mock_err.getvalue()
+
+    def test_speed_negative_rejected(self):
+        with patch("sys.argv", ["clirec", "play", "--speed", "-1", "f.clirec"]):
+            with patch("sys.stderr", new_callable=io.StringIO) as mock_err:
+                with pytest.raises(SystemExit, match="1"):
+                    main()
+                assert "speed" in mock_err.getvalue()
+
+    def test_max_delay_negative_rejected(self):
+        with patch("sys.argv", ["clirec", "play", "--max-delay", "-1", "f.clirec"]):
+            with patch("sys.stderr", new_callable=io.StringIO) as mock_err:
+                with pytest.raises(SystemExit, match="1"):
+                    main()
+                assert "max-delay" in mock_err.getvalue()
+
+
+class TestSigpipe:
+    def test_sigpipe_set_on_posix(self):
+        import signal
+
+        with patch("sys.argv", ["clirec"]):
+            with patch("cli_replay.cli.signal") as mock_signal:
+                mock_signal.SIGPIPE = signal.SIGPIPE
+                mock_signal.SIG_DFL = signal.SIG_DFL
+                main()
+                mock_signal.signal.assert_called_once_with(
+                    signal.SIGPIPE, signal.SIG_DFL
+                )
+
+    def test_no_sigpipe_skipped(self):
+        with patch("sys.argv", ["clirec"]):
+            with patch("cli_replay.cli.signal") as mock_signal:
+                del mock_signal.SIGPIPE
+                main()
+                mock_signal.signal.assert_not_called()
+
+
 class TestEndToEnd:
     def test_play_fixture(self, fixture_dir, capsys):
         filepath = str(fixture_dir / "sample.clirec")
@@ -77,8 +154,3 @@ class TestEndToEnd:
                 main()
         output = capsys.readouterr().out
         assert "hello" in output
-
-    def test_play_missing_file(self):
-        with patch("sys.argv", ["clirec", "play", "/nonexistent.clirec"]):
-            with pytest.raises(FileNotFoundError):
-                main()

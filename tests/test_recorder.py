@@ -14,6 +14,7 @@ import pytest
 from cli_replay.recorder import (
     _build_header,
     _generate_filename,
+    _install_sigwinch,
     _print_summary,
     _record_loop,
     _set_pty_size,
@@ -42,6 +43,14 @@ class TestGenerateFilename:
 
     def test_custom_name_strips_whitespace(self):
         assert _generate_filename("  demo  ") == "demo.clirec"
+
+    def test_empty_string_rejected(self):
+        with pytest.raises(ValueError, match="empty"):
+            _generate_filename("")
+
+    def test_whitespace_only_rejected(self):
+        with pytest.raises(ValueError, match="empty"):
+            _generate_filename("   ")
 
 
 # --- _build_header ---
@@ -264,6 +273,55 @@ class TestRecordLoop:
 
         os.close(stdin_r)
         assert count == 0
+
+
+# --- _install_sigwinch ---
+
+
+class TestInstallSigwinch:
+    def test_returns_old_handler(self):
+        import signal
+
+        master_fd, slave_fd = pty.openpty()
+        try:
+            old = _install_sigwinch(master_fd)
+            # Restore immediately
+            signal.signal(signal.SIGWINCH, old)
+            assert old is not None
+        finally:
+            os.close(master_fd)
+            os.close(slave_fd)
+
+    def test_handler_calls_set_pty_size(self):
+        import signal
+
+        master_fd, slave_fd = pty.openpty()
+        try:
+            old = _install_sigwinch(master_fd)
+            with patch(
+                "os.get_terminal_size", return_value=os.terminal_size((100, 50))
+            ):
+                with patch("cli_replay.recorder._set_pty_size") as mock_set:
+                    os.kill(os.getpid(), signal.SIGWINCH)
+                    mock_set.assert_called_once_with(master_fd, 100, 50)
+        finally:
+            signal.signal(signal.SIGWINCH, old)
+            os.close(master_fd)
+            os.close(slave_fd)
+
+    def test_handler_ignores_oserror(self):
+        import signal
+
+        master_fd, slave_fd = pty.openpty()
+        try:
+            old = _install_sigwinch(master_fd)
+            with patch("os.get_terminal_size", side_effect=OSError("no tty")):
+                # Should not raise
+                os.kill(os.getpid(), signal.SIGWINCH)
+        finally:
+            signal.signal(signal.SIGWINCH, old)
+            os.close(master_fd)
+            os.close(slave_fd)
 
 
 # --- record (orchestrator) ---

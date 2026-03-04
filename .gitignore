@@ -7,6 +7,10 @@ dist/
 build/
 agent_pack.tgz
 *.bak
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
 
 # PairCoder — ephemeral/session data
 .paircoder/.cli_version
