@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import signal
 import sys
+from typing import Any, Callable
 
 from cli_replay import __version__
 
@@ -16,7 +17,10 @@ REFLOW = "reflow"
 
 
 def _run_with_output(
-    func, filepath: str, output_file: str | None = None, **kwargs
+    func: Callable[..., Any],
+    filepath: str,
+    output_file: str | None = None,
+    **kwargs: Any,
 ) -> None:
     """Run a function with optional output file or stdout."""
     if output_file:
