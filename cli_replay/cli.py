@@ -119,7 +119,9 @@ def _build_parser() -> argparse.ArgumentParser:
         "--line-delay", type=int, default=0, help="Delay between lines in ms"
     )
 
-    redact_parser = sub.add_parser(REDACT, help="Redact sensitive data from a recording")
+    redact_parser = sub.add_parser(
+        REDACT, help="Redact sensitive data from a recording"
+    )
     redact_parser.add_argument("file", help="Path to .clirec file")
     redact_parser.add_argument("-o", "--output", help="Output file (default: stdout)")
 
