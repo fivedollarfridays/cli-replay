@@ -1,6 +1,7 @@
 """Tests for cli_replay.cli — CLI entry point integration tests."""
 
 import io
+import os
 from unittest.mock import patch
 
 import pytest
@@ -17,7 +18,7 @@ class TestPlayArgParsing:
                     filepath="test.clirec",
                     speed=1.0,
                     max_delay=3.0,
-                    no_input=False,
+                    show_input=False,
                     instant=False,
                     line_delay=0,
                 )
@@ -32,7 +33,7 @@ class TestPlayArgParsing:
                 "2.5",
                 "--max-delay",
                 "5.0",
-                "--no-input",
+                "--input",
                 "--instant",
                 "--line-delay",
                 "50",
@@ -45,7 +46,7 @@ class TestPlayArgParsing:
                     filepath="demo.clirec",
                     speed=2.5,
                     max_delay=5.0,
-                    no_input=True,
+                    show_input=True,
                     instant=True,
                     line_delay=50,
                 )
@@ -156,6 +157,34 @@ class TestSigpipe:
                 mock_signal.signal.assert_not_called()
 
 
+class TestRedactArgParsing:
+    def test_defaults(self):
+        with patch("sys.argv", ["clirec", "redact", "test.clirec"]):
+            with patch("cli_replay.redact.redact") as mock_redact:
+                main()
+                mock_redact.assert_called_once()
+                args = mock_redact.call_args
+                assert args.kwargs["filepath"] == "test.clirec"
+                # output should be sys.stdout by default
+                assert args.kwargs["output"] is not None
+
+    def test_with_output_flag(self):
+        out_file = "/tmp/clean.clirec"
+        with patch("sys.argv", ["clirec", "redact", "test.clirec", "-o", out_file]):
+            with patch("builtins.open", create=True) as mock_open:
+                with patch("cli_replay.redact.redact") as mock_redact:
+                    mock_open.return_value.__enter__.return_value = mock_open
+                    main()
+                    mock_redact.assert_called_once()
+
+    def test_missing_file_exits_cleanly(self):
+        with patch("sys.argv", ["clirec", "redact", "/nonexistent.clirec"]):
+            with patch("sys.stderr", new_callable=io.StringIO) as mock_err:
+                with pytest.raises(SystemExit, match="1"):
+                    main()
+                assert "error:" in mock_err.getvalue()
+
+
 class TestReflowArgParsing:
     def test_defaults(self):
         with patch("sys.argv", ["clirec", "reflow", "test.clirec"]):
@@ -182,6 +211,56 @@ class TestReflowArgParsing:
                 with pytest.raises(SystemExit, match="1"):
                     main()
                 assert "delay" in mock_err.getvalue()
+
+
+class TestEndToEndRedact:
+    def test_redact_inplace_modifies_file(self, tmp_path):
+        """Verify in-place redaction modifies the file."""
+        f = tmp_path / "test.clirec"
+        f.write_text(
+            '{"version": 1, "timestamp": "2026-03-11T00:00:00Z", "width": 80, "height": 24}\n'
+            '{"t": 0.0, "type": "o", "data": "kmasty@Rig$ "}\n'
+        )
+
+        with patch("sys.argv", ["clirec", "redact", str(f)]):
+            with patch.dict(
+                os.environ,
+                {"USER": "kmasty", "HOME": "/home/kmasty", "HOSTNAME": "Rig"},
+            ):
+                with patch("socket.gethostname", return_value="Rig"):
+                    main()
+
+        # File should be modified in place
+        content = f.read_text()
+        assert "kmasty" not in content
+        assert "Rig" not in content
+        assert "user" in content
+        assert "host" in content
+
+    def test_redact_with_output_creates_separate_file(self, tmp_path):
+        """Verify -o flag creates separate file without modifying original."""
+        f = tmp_path / "test.clirec"
+        original_content = (
+            '{"version": 1, "timestamp": "2026-03-11T00:00:00Z", "width": 80, "height": 24}\n'
+            '{"t": 0.0, "type": "o", "data": "kmasty@Rig$ "}\n'
+        )
+        f.write_text(original_content)
+        out = tmp_path / "clean.clirec"
+
+        with patch("sys.argv", ["clirec", "redact", str(f), "-o", str(out)]):
+            with patch.dict(
+                os.environ,
+                {"USER": "kmasty", "HOME": "/home/kmasty", "HOSTNAME": "Rig"},
+            ):
+                with patch("socket.gethostname", return_value="Rig"):
+                    main()
+
+        # Original unchanged
+        assert f.read_text() == original_content
+        # Output created and redacted
+        out_content = out.read_text()
+        assert "kmasty" not in out_content
+        assert "user" in out_content
 
 
 class TestEndToEnd:

@@ -23,9 +23,9 @@ def _compute_delay(
     return min(gap, max_delay)
 
 
-def _should_skip(event_type: str, no_input: bool) -> bool:
+def _should_skip(event_type: str, show_input: bool) -> bool:
     """Return True if this event should be skipped."""
-    return no_input and event_type == EVENT_INPUT
+    return not show_input and event_type == EVENT_INPUT
 
 
 def _write_with_line_delay(data: str, delay_s: float) -> None:
@@ -43,7 +43,7 @@ def play(
     filepath: str,
     speed: float = 1.0,
     max_delay: float = 3.0,
-    no_input: bool = False,
+    show_input: bool = False,
     instant: bool = False,
     line_delay: int = 0,
 ) -> None:
@@ -53,7 +53,7 @@ def play(
         read_header(f)  # validate header, not used in v1
         prev_t = 0.0
         for event in iter_events(f):
-            if _should_skip(event["type"], no_input):
+            if _should_skip(event["type"], show_input):
                 continue
             delay = _compute_delay(event["t"], prev_t, speed, max_delay, instant)
             if delay > 0:

@@ -39,14 +39,14 @@ class TestComputeDelay:
 
 class TestShouldSkip:
     def test_output_never_skipped(self):
-        assert _should_skip("o", no_input=False) is False
-        assert _should_skip("o", no_input=True) is False
+        assert _should_skip("o", show_input=False) is False
+        assert _should_skip("o", show_input=True) is False
 
-    def test_input_not_skipped_by_default(self):
-        assert _should_skip("i", no_input=False) is False
+    def test_input_skipped_by_default(self):
+        assert _should_skip("i", show_input=False) is True
 
-    def test_input_skipped_with_no_input(self):
-        assert _should_skip("i", no_input=True) is True
+    def test_input_shown_when_requested(self):
+        assert _should_skip("i", show_input=True) is False
 
 
 # --- play ---
@@ -60,7 +60,7 @@ class TestPlay:
                 filepath=str(fixture_dir / "sample.clirec"),
                 speed=1.0,
                 max_delay=3.0,
-                no_input=False,
+                show_input=False,
                 instant=False,
             )
         output = capsys.readouterr().out
@@ -68,24 +68,35 @@ class TestPlay:
         assert "echo hello" in output
         assert "hello" in output
 
-    def test_no_input_skips_input_events(self, fixture_dir, capsys):
+    def test_default_skips_input_events(self, fixture_dir, capsys):
         with patch("cli_replay.player.time") as mock_time:
             mock_time.sleep = lambda _: None
             play(
                 filepath=str(fixture_dir / "sample.clirec"),
                 speed=1.0,
                 max_delay=3.0,
-                no_input=True,
                 instant=False,
             )
         output = capsys.readouterr().out
         # Output events still present
         assert "$ " in output
         assert "hello\r\n" in output
-        # The fixture has 4 output events and 1 input event.
-        # With no_input, the input event ("echo hello\r\n" at t=0.5) is skipped.
-        # Output event at t=0.6 is also "echo hello\r\n" — so it still appears once.
+        # Default skips input — "echo hello\r\n" appears once (from output echo only)
         assert output.count("echo hello\r\n") == 1
+
+    def test_show_input_includes_input_events(self, fixture_dir, capsys):
+        with patch("cli_replay.player.time") as mock_time:
+            mock_time.sleep = lambda _: None
+            play(
+                filepath=str(fixture_dir / "sample.clirec"),
+                speed=1.0,
+                max_delay=3.0,
+                show_input=True,
+                instant=False,
+            )
+        output = capsys.readouterr().out
+        # Both input and output echo present — "echo hello\r\n" appears twice
+        assert output.count("echo hello\r\n") == 2
 
     def test_instant_mode(self, fixture_dir, capsys):
         with patch("cli_replay.player.time") as mock_time:
@@ -93,7 +104,7 @@ class TestPlay:
                 filepath=str(fixture_dir / "sample.clirec"),
                 speed=1.0,
                 max_delay=3.0,
-                no_input=False,
+                show_input=False,
                 instant=True,
             )
         # time.sleep should never be called in instant mode
@@ -107,7 +118,7 @@ class TestPlay:
                 filepath="/nonexistent/file.clirec",
                 speed=1.0,
                 max_delay=3.0,
-                no_input=False,
+                show_input=False,
                 instant=False,
             )
 
@@ -118,7 +129,7 @@ class TestPlay:
                 filepath=str(fixture_dir / "empty_session.clirec"),
                 speed=1.0,
                 max_delay=3.0,
-                no_input=False,
+                show_input=False,
                 instant=False,
             )
         output = capsys.readouterr().out
@@ -137,7 +148,7 @@ class TestLineDelay:
                 filepath=str(fixture_dir / "sample.clirec"),
                 speed=1.0,
                 max_delay=3.0,
-                no_input=False,
+                show_input=False,
                 instant=True,
                 line_delay=0,
             )
@@ -185,7 +196,7 @@ class TestLineDelay:
         assert 0.05 not in sleep_calls
 
     def test_applies_to_input_events(self, tmp_path, capsys):
-        """line_delay also applies to input events."""
+        """line_delay also applies to input events when show_input=True."""
         f = tmp_path / "input.clirec"
         f.write_text(
             '{"version": 1, "timestamp": "2026-01-01T00:00:00Z", "width": 80, "height": 24}\n'
@@ -197,6 +208,7 @@ class TestLineDelay:
             play(
                 filepath=str(f),
                 instant=True,
+                show_input=True,
                 line_delay=40,
             )
         assert 0.04 in sleep_calls
