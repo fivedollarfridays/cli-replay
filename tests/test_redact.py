@@ -5,8 +5,6 @@ import json
 import os
 from unittest.mock import patch
 
-import pytest
-
 from cli_replay.redact import _build_replacements, _redact_event, redact
 from cli_replay.session import SessionEvent
 

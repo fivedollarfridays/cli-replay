@@ -159,14 +159,11 @@ class TestSigpipe:
 
 class TestRedactArgParsing:
     def test_defaults(self):
+        # No -o flag → calls redact_inplace
         with patch("sys.argv", ["clirec", "redact", "test.clirec"]):
-            with patch("cli_replay.redact.redact") as mock_redact:
+            with patch("cli_replay.redact.redact_inplace") as mock_inplace:
                 main()
-                mock_redact.assert_called_once()
-                args = mock_redact.call_args
-                assert args.kwargs["filepath"] == "test.clirec"
-                # output should be sys.stdout by default
-                assert args.kwargs["output"] is not None
+                mock_inplace.assert_called_once_with(filepath="test.clirec")
 
     def test_with_output_flag(self):
         out_file = "/tmp/clean.clirec"
