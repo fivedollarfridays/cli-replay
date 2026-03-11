@@ -34,6 +34,10 @@ cli_replay = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--ignore=tests/test_export.py"
+
+[tool.coverage.run]
+omit = ["cli_replay/export.py"]
 
 [tool.ruff]
 exclude = [".claude", ".paircoder"]

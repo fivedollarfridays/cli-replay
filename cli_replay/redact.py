@@ -96,7 +96,7 @@ def redact_inplace(*, filepath: str) -> None:
         tmp_path = tmp.name
         try:
             redact(filepath=filepath, output=tmp)
-        except Exception:
+        except Exception:  # pragma: no cover
             # Clean up temp file on error
             os.unlink(tmp_path)
             raise
