@@ -23,6 +23,15 @@ def _compute_delay(
     return min(gap, max_delay)
 
 
+def _is_echo(event: dict, prev_event: dict | None, show_input: bool) -> bool:
+    """Return True if this output event is just an echo of the prior input."""
+    if not show_input or prev_event is None:
+        return False
+    if event["type"] != "o" or prev_event["type"] != EVENT_INPUT:
+        return False
+    return event["data"] == prev_event["data"]
+
+
 def _should_skip(event_type: str, show_input: bool) -> bool:
     """Return True if this event should be skipped."""
     return not show_input and event_type == EVENT_INPUT
@@ -52,8 +61,12 @@ def play(
     with open(filepath) as f:
         read_header(f)  # validate header, not used in v1
         prev_t = 0.0
+        prev_event: dict | None = None
         for event in iter_events(f):
             if _should_skip(event["type"], show_input):
+                continue
+            if _is_echo(event, prev_event, show_input):
+                prev_event = event
                 continue
             delay = _compute_delay(event["t"], prev_t, speed, max_delay, instant)
             if delay > 0:
@@ -63,4 +76,5 @@ def play(
             else:
                 sys.stdout.write(event["data"])
                 sys.stdout.flush()
+            prev_event = event
             prev_t = event["t"]

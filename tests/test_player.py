@@ -95,8 +95,10 @@ class TestPlay:
                 instant=False,
             )
         output = capsys.readouterr().out
-        # Both input and output echo present — "echo hello\r\n" appears twice
-        assert output.count("echo hello\r\n") == 2
+        # Echo suppression: input shown, duplicate output echo suppressed
+        assert output.count("echo hello\r\n") == 1
+        # Command output still appears
+        assert "hello\r\n" in output
 
     def test_instant_mode(self, fixture_dir, capsys):
         with patch("cli_replay.player.time") as mock_time:
