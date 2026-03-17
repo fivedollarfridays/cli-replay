@@ -33,7 +33,9 @@ class TestGenerateFilename:
 
     def test_default_creates_dir(self, tmp_path):
         data_dir = tmp_path / ".local" / "share" / "clirec"
-        with patch("cli_replay.recorder.os.path.expanduser", return_value=str(tmp_path)):
+        with patch(
+            "cli_replay.recorder.os.path.expanduser", return_value=str(tmp_path)
+        ):
             name = _generate_filename(None)
         assert data_dir.is_dir()
         assert name.startswith(str(data_dir))

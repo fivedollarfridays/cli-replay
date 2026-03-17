@@ -109,7 +109,9 @@ def _record_loop(
             else:
                 os.write(master_fd, data)
                 text = data.decode("utf-8", errors="replace")
-                _log_event(f, SessionEvent(t=t, type=EVENT_INPUT, data=text), write_lock)
+                _log_event(
+                    f, SessionEvent(t=t, type=EVENT_INPUT, data=text), write_lock
+                )
                 event_count += 1
         if master_fd in rlist:
             try:
@@ -238,8 +240,11 @@ def record(*, output: str | None = None, script: str | None = None) -> None:
             if scripted:
                 assert script is not None and write_lock is not None
                 from cli_replay.script_feeder import OutputBuffer
+
                 output_buffer = OutputBuffer()
-                _start_script_feeder(script, master_fd, f, start, write_lock, output_buffer)
+                _start_script_feeder(
+                    script, master_fd, f, start, write_lock, output_buffer
+                )
             event_count = _record_loop(
                 stdin_fd, master_fd, proc, f, start, write_lock, output_buffer
             )

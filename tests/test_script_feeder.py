@@ -68,6 +68,30 @@ class TestParseScript:
         assert isinstance(result[0], PauseDirective)
         assert result[0].seconds == 1.5
 
+    def test_wait_missing_arg_raises(self, tmp_path):
+        f = tmp_path / "script.txt"
+        f.write_text("@wait\n")
+        import pytest
+
+        with pytest.raises(ValueError, match="@wait requires a duration"):
+            parse_script(str(f))
+
+    def test_speed_missing_arg_raises(self, tmp_path):
+        f = tmp_path / "script.txt"
+        f.write_text("@speed\n")
+        import pytest
+
+        with pytest.raises(ValueError, match="@speed requires milliseconds"):
+            parse_script(str(f))
+
+    def test_pause_missing_arg_raises(self, tmp_path):
+        f = tmp_path / "script.txt"
+        f.write_text("@pause\n")
+        import pytest
+
+        with pytest.raises(ValueError, match="@pause requires seconds"):
+            parse_script(str(f))
+
     def test_unknown_directive_raises(self, tmp_path):
         f = tmp_path / "script.txt"
         f.write_text("@bogus 5\n")
