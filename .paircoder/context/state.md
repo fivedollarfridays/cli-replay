@@ -1,17 +1,21 @@
 # Current State
 
-> Last updated: 2026-03-11
+> Last updated: 2026-03-17
 
 ## Active Plan
 
-**Plan:** plan-2026-03-auto-redact
-**Title:** Auto-Redact Personal Data in Recordings
+**Plan:** plan-2026-03-demo-reset
+**Title:** Reliable demo reset loop for test-store video recordings
 **Status:** In Progress
-**Type:** feature
+**Type:** chore
+
+## Previous Plan (Complete)
+
+**Plan:** plan-2026-03-auto-redact — Sprint 4 fully complete. 145 tests, 100% coverage.
 
 ## Current Focus
 
-Sprint 4 planned. Ready to begin T4.1.
+Sprint 5 — Demo reset loop. T5.1 → T5.2 → T5.3 (sequential, each depends on prior).
 
 ## Task Status
 
@@ -53,9 +57,17 @@ Sprint 4 planned. Ready to begin T4.1.
 
 - **T4.3 done** — Implemented `redact()` main function in `cli_replay/redact.py`. Orchestrates file I/O: reads .clirec, detects sensitive data from environment, applies redactions to all events, writes to output stream. Follows reflow.py pattern. 3 tests cover: fixture redaction, header preservation, multi-event round-trip. 140 tests passing, arch check green.
 
+## Sprint 5 (Demo Reset Loop)
+
+| Task | Description | Status | Cx |
+|------|-------------|--------|-----|
+| T5.1 | Fix demo-planned git tag to pre-implementation state | ⏳ pending | 10 |
+| T5.2 | Update video3-reset.sh to run preflight and fail loudly | ⏳ pending | 10 |
+| T5.3 | Create reset-demo skill for test-store | ⏳ pending | 15 |
+
 ## What's Next
 
-All work complete! Sprint 4 fully implemented with code quality review and improvements. Ready for merge.
+Start T5.1 — fix `demo-planned` tag in `~/test-store` to point to pre-implementation state with corrected `video3-session1.txt`.
 
 ## Completion Summary
 
