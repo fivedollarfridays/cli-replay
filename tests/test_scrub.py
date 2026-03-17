@@ -41,25 +41,17 @@ DIGIT_PATTERN = re.compile(r"^\d{1,4}$")
 
 
 class TestShouldDrop:
-    def test_drops_matching_output_event_in_range(self):
+    def test_drops_matching_output_event(self):
         ev = SessionEvent(t=150.0, type="o", data="\x1b[38;5;246m42\x1b[39m")
-        assert should_drop(ev, DIGIT_PATTERN, from_t=100.0, to_t=200.0) is True
+        assert should_drop(ev, DIGIT_PATTERN) is True
 
     def test_keeps_input_events(self):
         ev = SessionEvent(t=150.0, type="i", data="5")
-        assert should_drop(ev, DIGIT_PATTERN, from_t=100.0, to_t=200.0) is False
-
-    def test_keeps_events_outside_range_before(self):
-        ev = SessionEvent(t=50.0, type="o", data="\x1b[38;5;246m42\x1b[39m")
-        assert should_drop(ev, DIGIT_PATTERN, from_t=100.0, to_t=200.0) is False
-
-    def test_keeps_events_outside_range_after(self):
-        ev = SessionEvent(t=250.0, type="o", data="\x1b[38;5;246m42\x1b[39m")
-        assert should_drop(ev, DIGIT_PATTERN, from_t=100.0, to_t=200.0) is False
+        assert should_drop(ev, DIGIT_PATTERN) is False
 
     def test_keeps_non_matching_output_event(self):
         ev = SessionEvent(t=150.0, type="o", data="hello world")
-        assert should_drop(ev, DIGIT_PATTERN, from_t=100.0, to_t=200.0) is False
+        assert should_drop(ev, DIGIT_PATTERN) is False
 
     def test_keeps_sync_frame_with_content(self):
         """Sync frames with non-digit content are kept."""
@@ -68,7 +60,7 @@ class TestShouldDrop:
             type="o",
             data="\x1b[?2026h\r\x1b[7A\x1b[38;5;215m✽\x1b[25C\x1b[39m\r\r\n\x1b[?2026l",
         )
-        assert should_drop(ev, DIGIT_PATTERN, from_t=100.0, to_t=200.0) is False
+        assert should_drop(ev, DIGIT_PATTERN) is False
 
 
 class TestScrubData:
