@@ -1,0 +1,12 @@
+id: plan-2026-03-auto-redact
+title: Auto-Redact Personal Data in Recordings
+type: feature
+status: complete
+created_at: '2026-03-11T13:01:22.979155'
+skills:
+- planning-with-trello
+goals:
+- Add clirec redact command to strip username, hostname, and home path from .clirec
+  files
+- 'Zero-config: auto-detect values from environment'
+- Follow reflow.py post-processor pattern

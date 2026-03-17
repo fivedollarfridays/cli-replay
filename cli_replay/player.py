@@ -6,7 +6,7 @@ import sys
 import time
 
 from cli_replay.reflow import split_lines
-from cli_replay.session import EVENT_INPUT, iter_events, read_header
+from cli_replay.session import EVENT_INPUT, SessionEvent, iter_events, read_header
 
 
 def _compute_delay(
@@ -23,7 +23,9 @@ def _compute_delay(
     return min(gap, max_delay)
 
 
-def _is_echo(event: dict, prev_event: dict | None, show_input: bool) -> bool:
+def _is_echo(
+    event: SessionEvent, prev_event: SessionEvent | None, show_input: bool
+) -> bool:
     """Return True if this output event is just an echo of the prior input."""
     if not show_input or prev_event is None:
         return False
@@ -61,7 +63,7 @@ def play(
     with open(filepath) as f:
         read_header(f)  # validate header, not used in v1
         prev_t = 0.0
-        prev_event: dict | None = None
+        prev_event: SessionEvent | None = None
         for event in iter_events(f):
             if _should_skip(event["type"], show_input):
                 continue

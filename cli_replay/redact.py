@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import socket
 import tempfile
 from typing import IO
@@ -16,35 +17,46 @@ from cli_replay.session import (
 )
 
 
-def _build_replacements() -> list[tuple[str, str]]:
+def _build_replacements() -> list[tuple[re.Pattern[str], str]]:
     """Detect username, hostname, home path from environment.
 
-    Returns list of (old, new) replacement tuples ordered longest-first
-    to prevent partial replacements. Skips empty/None values.
+    Returns list of (pattern, new) replacement tuples ordered longest-first
+    to prevent partial replacements. Short strings use word boundaries.
     """
     user = os.environ.get("USER") or ""
     home = os.environ.get("HOME") or ""
     hostname = socket.gethostname() or ""
 
-    replacements: list[tuple[str, str]] = []
+    replacements: list[tuple[re.Pattern[str], str]] = []
 
     # Add home path first (longest match)
     if home:
-        replacements.append((home, "/home/user"))
+        replacements.append((_make_pattern(home), "/home/user"))
 
     # Add username
     if user:
-        replacements.append((user, "user"))
+        replacements.append((_make_pattern(user), "user"))
 
     # Add hostname
     if hostname:
-        replacements.append((hostname, "host"))
+        replacements.append((_make_pattern(hostname), "host"))
 
     return replacements
 
 
+_SHORT_THRESHOLD = 5
+
+
+def _make_pattern(text: str) -> re.Pattern[str]:
+    """Build a regex for replacement — word-bounded for short strings."""
+    escaped = re.escape(text)
+    if len(text) < _SHORT_THRESHOLD:
+        return re.compile(r"(?<![a-zA-Z])" + escaped + r"(?![a-zA-Z])")
+    return re.compile(escaped)
+
+
 def _redact_event(
-    event: SessionEvent, replacements: list[tuple[str, str]]
+    event: SessionEvent, replacements: list[tuple[re.Pattern[str], str]]
 ) -> SessionEvent:
     """Apply replacements to event data field.
 
@@ -52,8 +64,8 @@ def _redact_event(
     Applies replacements in order (longest-first).
     """
     redacted_data = event["data"]
-    for old, new in replacements:
-        redacted_data = redacted_data.replace(old, new)
+    for pattern, new in replacements:
+        redacted_data = pattern.sub(new, redacted_data)
 
     return SessionEvent(t=event["t"], type=event["type"], data=redacted_data)
 

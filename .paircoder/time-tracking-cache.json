@@ -1,0 +1,226 @@
+{
+  "T1.1": {
+    "entries": [
+      {
+        "id": "local-20260304022429",
+        "task_id": "T1.1",
+        "description": "T1.1: Session format: types, validation, write + test setup",
+        "start": "2026-03-04T02:24:29.768778",
+        "end": "2026-03-04T02:26:09.508834",
+        "duration_seconds": 99.740056,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 99.740056
+  },
+  "T1.2": {
+    "entries": [
+      {
+        "id": "local-20260304022614",
+        "task_id": "T1.2",
+        "description": "T1.2: Session format: read functions + fixtures",
+        "start": "2026-03-04T02:26:14.910758",
+        "end": "2026-03-04T02:27:46.530432",
+        "duration_seconds": 91.619674,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 91.619674
+  },
+  "T1.4": {
+    "entries": [
+      {
+        "id": "local-20260304022752",
+        "task_id": "T1.4",
+        "description": "T1.4: Player: replay with timing controls",
+        "start": "2026-03-04T02:27:52.999903",
+        "end": "2026-03-04T02:29:01.295099",
+        "duration_seconds": 68.295196,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 68.295196
+  },
+  "T1.3": {
+    "entries": [
+      {
+        "id": "local-20260304022906",
+        "task_id": "T1.3",
+        "description": "T1.3: Recorder: PTY capture implementation",
+        "start": "2026-03-04T02:29:06.894915",
+        "end": "2026-03-04T02:32:09.162373",
+        "duration_seconds": 182.267458,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 182.267458
+  },
+  "T1.5": {
+    "entries": [
+      {
+        "id": "local-20260304023217",
+        "task_id": "T1.5",
+        "description": "T1.5: CLI integration tests",
+        "start": "2026-03-04T02:32:17.169128",
+        "end": "2026-03-04T02:34:13.947807",
+        "duration_seconds": 116.778679,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 116.778679
+  },
+  "T2.5": {
+    "entries": [
+      {
+        "id": "local-20260304031417",
+        "task_id": "T2.5",
+        "description": "T2.5: Packaging polish: py.typed, .gitignore, pyproject.toml, version, CI",
+        "start": "2026-03-04T03:14:17.781670",
+        "end": "2026-03-04T03:15:25.631764",
+        "duration_seconds": 67.850094,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 67.850094
+  },
+  "T2.2": {
+    "entries": [
+      {
+        "id": "local-20260304031530",
+        "task_id": "T2.2",
+        "description": "T2.2: Session validation type hardening + filename edge case",
+        "start": "2026-03-04T03:15:30.825562",
+        "end": "2026-03-04T03:18:00.331747",
+        "duration_seconds": 149.506185,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 149.506185
+  },
+  "T2.1": {
+    "entries": [
+      {
+        "id": "local-20260304031809",
+        "task_id": "T2.1",
+        "description": "T2.1: CLI robustness: --version, error handling, speed validation",
+        "start": "2026-03-04T03:18:09.406743",
+        "end": "2026-03-04T03:19:38.204192",
+        "duration_seconds": 88.797449,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 88.797449
+  },
+  "T2.3": {
+    "entries": [
+      {
+        "id": "local-20260304031944",
+        "task_id": "T2.3",
+        "description": "T2.3: SIGPIPE / BrokenPipeError handling",
+        "start": "2026-03-04T03:19:44.645019",
+        "end": "2026-03-04T03:21:14.042418",
+        "duration_seconds": 89.397399,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 89.397399
+  },
+  "T2.4": {
+    "entries": [
+      {
+        "id": "local-20260304032119",
+        "task_id": "T2.4",
+        "description": "T2.4: SIGWINCH handling in recorder",
+        "start": "2026-03-04T03:21:19.774898",
+        "end": "2026-03-04T03:24:09.769291",
+        "duration_seconds": 169.994393,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 169.994393
+  },
+  "T3.5": {
+    "entries": [
+      {
+        "id": "local-20260304040403",
+        "task_id": "T3.5",
+        "description": "T3.5: clirec reflow command + integration tests",
+        "start": "2026-03-04T04:04:03.437472",
+        "end": "2026-03-04T04:06:49.828631",
+        "duration_seconds": 166.391159,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 166.391159
+  },
+  "T4.1": {
+    "entries": [
+      {
+        "id": "local-20260311130445",
+        "task_id": "T4.1",
+        "description": "T4.1: build_replacements pure function + tests",
+        "start": "2026-03-11T13:04:45.567421",
+        "end": "2026-03-11T13:06:05.168863",
+        "duration_seconds": 79.601442,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 79.601442
+  },
+  "T4.2": {
+    "entries": [
+      {
+        "id": "local-20260311130628",
+        "task_id": "T4.2",
+        "description": "T4.2: redact_event pure function + tests",
+        "start": "2026-03-11T13:06:28.049764",
+        "end": "2026-03-11T13:07:40.530590",
+        "duration_seconds": 72.480826,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 72.480826
+  },
+  "T4.3": {
+    "entries": [
+      {
+        "id": "local-20260311130945",
+        "task_id": "T4.3",
+        "description": "T4.3: redact main function + file I/O + tests",
+        "start": "2026-03-11T13:09:45.126221",
+        "end": "2026-03-11T13:11:19.451892",
+        "duration_seconds": 94.325671,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 94.325671
+  },
+  "T4.4": {
+    "entries": [
+      {
+        "id": "local-20260311131140",
+        "task_id": "T4.4",
+        "description": "T4.4: CLI redact subcommand + validation + tests",
+        "start": "2026-03-11T13:11:40.443512",
+        "end": "2026-03-11T13:13:28.534610",
+        "duration_seconds": 108.091098,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 108.091098
+  },
+  "T4.5": {
+    "entries": [
+      {
+        "id": "local-20260311131601",
+        "task_id": "T4.5",
+        "description": "T4.5: In-place file redaction + integration tests",
+        "start": "2026-03-11T13:16:01.142830",
+        "end": "2026-03-11T13:17:52.463574",
+        "duration_seconds": 111.320744,
+        "provider_id": null
+      }
+    ],
+    "total_seconds": 111.320744
+  }
+}
