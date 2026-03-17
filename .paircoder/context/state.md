@@ -41,6 +41,8 @@ Sprint 5 — Demo reset loop. T5.1 → T5.2 → T5.3 (sequential, each depends o
 
 ## What Was Just Done
 
+- **T5.1 done** (auto-updated by hook)
+
 - **Code Review & Quality Improvements** — Ran `/simplify` skill with 3 agents (code reuse, quality, efficiency). Fixed TOCTOU race condition in `redact_inplace()` by validating file readability first. Added command constants (RECORD, PLAY, REDACT, REFLOW) to eliminate magic strings in CLI dispatch. All 145 tests passing, architecture green. Commit: af06b1a.
 
 - **T4.5 done** (auto-updated by hook)
@@ -62,10 +64,12 @@ Sprint 5 — Demo reset loop. T5.1 → T5.2 → T5.3 (sequential, each depends o
 | Task | Description | Status | Cx |
 |------|-------------|--------|-----|
 | T5.1 | Fix demo-planned git tag to pre-implementation state | ✅ done | 10 |
-| T5.2 | Update video3-reset.sh to run preflight and fail loudly | ⏳ pending | 10 |
+| T5.2 | Update video3-reset.sh to run preflight and fail loudly | ✅ done | 10 |
 | T5.3 | Create reset-demo skill for test-store | ⏳ pending | 15 |
 
 ## What Was Just Done
+
+- **T5.2 done** — Updated `video3-reset.sh` to call `video3-preflight.sh` after git reset. Exits 1 with "❌ Reset failed" if any check fails, prints "✅ Ready to record" on full pass (29/29 checks). Committed to `demo-planned` tag at `257a99d`.
 
 - **T5.1 done** — Fixed `demo-planned` tag in `~/test-store`. Created `temp-demo-planned` branch at `0fb5ac7` (pre-implementation), applied 4 "See ya!" trigger fixes to `video3-session1.txt`, committed, force-updated `demo-planned` tag to new commit `2dcbd3c`. All ACs verified: no `tests/test_search.py`, no search in `src/main.py`, 4× See ya! in script, clean tree after reset.
 
