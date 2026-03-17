@@ -61,13 +61,17 @@ Sprint 5 — Demo reset loop. T5.1 → T5.2 → T5.3 (sequential, each depends o
 
 | Task | Description | Status | Cx |
 |------|-------------|--------|-----|
-| T5.1 | Fix demo-planned git tag to pre-implementation state | ⏳ pending | 10 |
+| T5.1 | Fix demo-planned git tag to pre-implementation state | ✅ done | 10 |
 | T5.2 | Update video3-reset.sh to run preflight and fail loudly | ⏳ pending | 10 |
 | T5.3 | Create reset-demo skill for test-store | ⏳ pending | 15 |
 
+## What Was Just Done
+
+- **T5.1 done** — Fixed `demo-planned` tag in `~/test-store`. Created `temp-demo-planned` branch at `0fb5ac7` (pre-implementation), applied 4 "See ya!" trigger fixes to `video3-session1.txt`, committed, force-updated `demo-planned` tag to new commit `2dcbd3c`. All ACs verified: no `tests/test_search.py`, no search in `src/main.py`, 4× See ya! in script, clean tree after reset.
+
 ## What's Next
 
-Start T5.1 — fix `demo-planned` tag in `~/test-store` to point to pre-implementation state with corrected `video3-session1.txt`.
+T5.2 — update `video3-reset.sh` to call `video3-preflight.sh` after reset and exit 1 with "❌ Reset failed" if any check fails.
 
 ## Completion Summary
 
