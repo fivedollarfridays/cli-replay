@@ -11,10 +11,10 @@ from dataclasses import dataclass
 from typing import Iterator, NamedTuple
 
 from cli_replay.reflow import split_lines
+from cli_replay.player import _compute_delay
 from cli_replay.session import (
     EVENT_INPUT,
     SessionEvent,
-    compute_gap,
     iter_events,
     read_header,
 )
@@ -185,7 +185,7 @@ def _compute_duration_from_events(
     for event in events:
         if event["type"] == EVENT_INPUT:
             continue
-        total += compute_gap(event["t"], prev_t, speed, max_delay)
+        total += _compute_delay(event["t"], prev_t, speed, max_delay, False)
         if line_delay_s > 0:
             lines = split_lines(event["data"])
             if len(lines) > 1:

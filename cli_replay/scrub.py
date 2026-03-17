@@ -60,16 +60,9 @@ def scrub_data(data: str) -> str:
     return result
 
 
-def should_drop(
-    event: SessionEvent,
-    pattern: re.Pattern[str],
-    from_t: float,
-    to_t: float,
-) -> bool:
+def should_drop(event: SessionEvent, pattern: re.Pattern[str]) -> bool:
     """Return True if this event should be dropped entirely."""
     if event["type"] != "o":
-        return False
-    if not (from_t <= event["t"] <= to_t):
         return False
     visible = strip_ansi(event["data"]).strip()
     return bool(pattern.match(visible))
@@ -106,7 +99,7 @@ def scrub(
                 continue
             in_range = from_t <= event["t"] <= to_t
             # Drop pattern-matched events
-            if in_range and should_drop(event, compiled, from_t, to_t):
+            if in_range and should_drop(event, compiled):
                 dropped += 1
                 continue
             # Drop sync frames in range

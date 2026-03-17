@@ -32,11 +32,6 @@ from cli_replay.session import (
 )
 
 
-def _get_save_dir() -> str:
-    """Return the default save directory for recordings."""
-    return os.path.join(os.path.expanduser("~"), ".local", "share", "clirec")
-
-
 def _generate_filename(output: str | None) -> str:
     """Generate a .clirec filename from user input or timestamp."""
     if output is not None:
@@ -46,7 +41,7 @@ def _generate_filename(output: str | None) -> str:
         if not name.endswith(".clirec"):
             name += ".clirec"
         return name
-    save_dir = _get_save_dir()
+    save_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "clirec")
     os.makedirs(save_dir, exist_ok=True)
     now = datetime.now(timezone.utc)
     return os.path.join(save_dir, now.strftime("%Y-%m-%d_%H%M%S") + ".clirec")
@@ -93,9 +88,7 @@ def _record_loop(
 ) -> int:
     """Run the select-based I/O loop. Returns event count."""
     event_count = 0
-    read_fds: list[int] = [master_fd]
-    if stdin_fd is not None:
-        read_fds.append(stdin_fd)
+    read_fds: list[int] = [x for x in [master_fd, stdin_fd] if x is not None]
     while True:
         try:
             rlist, _, _ = select.select(read_fds, [], [], 0.25)
@@ -228,13 +221,10 @@ def record(*, output: str | None = None, script: str | None = None) -> None:
     master_fd, proc = _spawn_shell(header)
     old_sigwinch = _install_sigwinch(master_fd)
     scripted = script is not None
-
-    msg = (
-        f"Recording (scripted) to {filename}\n"
-        if scripted
-        else f"Recording to {filename} (exit or Ctrl+D to stop)\n"
-    )
-    sys.stderr.write(msg)
+    if scripted:
+        sys.stderr.write(f"Recording (scripted) to {filename}\n")
+    else:
+        sys.stderr.write(f"Recording to {filename} (exit or Ctrl+D to stop)\n")
     sys.stderr.flush()
 
     stdin_fd, old_settings = _get_stdin()
@@ -248,35 +238,23 @@ def record(*, output: str | None = None, script: str | None = None) -> None:
         with open(filename, "w", buffering=1) as f:
             write_header(f, header)
             if scripted:
-                assert script is not None
-                assert write_lock is not None
+                assert script is not None and write_lock is not None
                 from cli_replay.script_feeder import OutputBuffer
 
                 output_buffer = OutputBuffer()
                 _start_script_feeder(
-                    script,
-                    master_fd,
-                    f,
-                    start,
-                    write_lock,
-                    output_buffer,
+                    script, master_fd, f, start, write_lock, output_buffer
                 )
             event_count = _record_loop(
-                stdin_fd,
-                master_fd,
-                proc,
-                f,
-                start,
-                write_lock,
-                output_buffer,
+                stdin_fd, master_fd, proc, f, start, write_lock, output_buffer
             )
     except KeyboardInterrupt:  # pragma: no cover
         if output_buffer is not None:
             output_buffer.stop.set()
     finally:
         signal.signal(signal.SIGWINCH, old_sigwinch)
-        if old_settings:
-            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old_settings)
+        if old_settings and stdin_fd is not None:
+            termios.tcsetattr(stdin_fd, termios.TCSADRAIN, old_settings)
         os.close(master_fd)
         try:
             proc.wait(timeout=5)

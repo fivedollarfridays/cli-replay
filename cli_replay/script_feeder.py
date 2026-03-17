@@ -140,6 +140,8 @@ def _parse_line(line: str) -> Directive:
             timeout = float(rest) if rest else 30.0
             return WaitForDirective(text=text, timeout=timeout, clear=clear)
         if directive_name == "@wait":
+            if not arg:
+                raise ValueError("@wait requires a duration: @wait 2.0")
             return WaitDirective(seconds=float(arg))
         if directive_name == "@key":
             key = arg.strip()
@@ -147,8 +149,12 @@ def _parse_line(line: str) -> Directive:
                 raise ValueError(f"unknown key: {key!r}")
             return KeyDirective(key_name=key)
         if directive_name == "@speed":
+            if not arg:
+                raise ValueError("@speed requires milliseconds: @speed 50")
             return SpeedDirective(ms=int(arg))
         if directive_name == "@pause":
+            if not arg:
+                raise ValueError("@pause requires seconds: @pause 0.5")
             return PauseDirective(seconds=float(arg))
         raise ValueError(f"unknown directive: {directive_name!r}")
     return TypeCommand(text=_strip_inline_comment(line))

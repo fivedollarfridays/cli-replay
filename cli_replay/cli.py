@@ -147,16 +147,20 @@ def _build_parser() -> argparse.ArgumentParser:
     redact_parser.add_argument("file", help="Path to .clirec file")
     redact_parser.add_argument("-o", "--output", help="Output file (default: stdout)")
 
+    _add_reflow_parser(sub)
+    _add_scrub_parser(sub)
+
+    return parser
+
+
+def _add_reflow_parser(sub: argparse._SubParsersAction) -> None:  # type: ignore[type-arg]
+    """Add the reflow subcommand parser."""
     reflow_parser = sub.add_parser(REFLOW, help="Reflow a recorded session")
     reflow_parser.add_argument("file", help="Path to .clirec file")
     reflow_parser.add_argument("-o", "--output", help="Output file (default: stdout)")
     reflow_parser.add_argument(
         "--delay", type=int, default=40, help="Delay between lines in ms (default: 40)"
     )
-
-    _add_scrub_parser(sub)
-
-    return parser
 
 
 def _add_scrub_parser(sub: argparse._SubParsersAction) -> None:  # type: ignore[type-arg]

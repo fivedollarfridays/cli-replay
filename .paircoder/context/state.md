@@ -1,17 +1,21 @@
 # Current State
 
-> Last updated: 2026-03-11
+> Last updated: 2026-03-17
 
 ## Active Plan
 
-**Plan:** plan-2026-03-auto-redact
-**Title:** Auto-Redact Personal Data in Recordings
+**Plan:** plan-2026-03-demo-reset
+**Title:** Reliable demo reset loop for test-store video recordings
 **Status:** In Progress
-**Type:** feature
+**Type:** chore
+
+## Previous Plan (Complete)
+
+**Plan:** plan-2026-03-auto-redact — Sprint 4 fully complete. 145 tests, 100% coverage.
 
 ## Current Focus
 
-Sprint 4 planned. Ready to begin T4.1.
+Sprint 5 — Demo reset loop. T5.1 → T5.2 → T5.3 (sequential, each depends on prior).
 
 ## Task Status
 
@@ -37,6 +41,10 @@ Sprint 4 planned. Ready to begin T4.1.
 
 ## What Was Just Done
 
+- **T5.2 done** (auto-updated by hook)
+
+- **T5.1 done** (auto-updated by hook)
+
 - **Code Review & Quality Improvements** — Ran `/simplify` skill with 3 agents (code reuse, quality, efficiency). Fixed TOCTOU race condition in `redact_inplace()` by validating file readability first. Added command constants (RECORD, PLAY, REDACT, REFLOW) to eliminate magic strings in CLI dispatch. All 145 tests passing, architecture green. Commit: af06b1a.
 
 - **T4.5 done** (auto-updated by hook)
@@ -53,9 +61,25 @@ Sprint 4 planned. Ready to begin T4.1.
 
 - **T4.3 done** — Implemented `redact()` main function in `cli_replay/redact.py`. Orchestrates file I/O: reads .clirec, detects sensitive data from environment, applies redactions to all events, writes to output stream. Follows reflow.py pattern. 3 tests cover: fixture redaction, header preservation, multi-event round-trip. 140 tests passing, arch check green.
 
+## Sprint 5 (Demo Reset Loop)
+
+| Task | Description | Status | Cx |
+|------|-------------|--------|-----|
+| T5.1 | Fix demo-planned git tag to pre-implementation state | ✅ done | 10 |
+| T5.2 | Update video3-reset.sh to run preflight and fail loudly | ✅ done | 10 |
+| T5.3 | Create reset-demo skill for test-store | ✅ done | 15 |
+
+## What Was Just Done
+
+- **T5.3 done** — Created `resetting-demo` skill at `~/test-store/.claude/skills/resetting-demo/SKILL.md`. Skill guides reset loop: run `video3-reset.sh`, parse output, report pass/fail by category, output record command on success. Committed to `demo-planned` tag at `02abdb1`. Sprint 5 complete.
+
+- **T5.2 done** — Updated `video3-reset.sh` to call `video3-preflight.sh` after git reset. Exits 1 with "❌ Reset failed" if any check fails, prints "✅ Ready to record" on full pass (29/29 checks). Committed to `demo-planned` tag at `257a99d`.
+
+- **T5.1 done** — Fixed `demo-planned` tag in `~/test-store`. Created `temp-demo-planned` branch at `0fb5ac7` (pre-implementation), applied 4 "See ya!" trigger fixes to `video3-session1.txt`, committed, force-updated `demo-planned` tag to new commit `2dcbd3c`. All ACs verified: no `tests/test_search.py`, no search in `src/main.py`, 4× See ya! in script, clean tree after reset.
+
 ## What's Next
 
-All work complete! Sprint 4 fully implemented with code quality review and improvements. Ready for merge.
+T5.2 — update `video3-reset.sh` to call `video3-preflight.sh` after reset and exit 1 with "❌ Reset failed" if any check fails.
 
 ## Completion Summary
 
