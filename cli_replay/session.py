@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import IO, Any, Iterator, TypedDict
 
 
 SUPPORTED_VERSION = 1
+ANSI_RE = re.compile(r"\x1b\[[^a-zA-Z]*[a-zA-Z]|\x1b\][^\x07]*\x07")
 EVENT_INPUT = "i"
 EVENT_OUTPUT = "o"
 VALID_EVENT_TYPES = (EVENT_INPUT, EVENT_OUTPUT)

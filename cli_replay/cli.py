@@ -14,6 +14,7 @@ RECORD = "record"
 PLAY = "play"
 REDACT = "redact"
 REFLOW = "reflow"
+SCRUB = "scrub"
 
 
 def _run_with_output(
@@ -46,13 +47,27 @@ def _validate_reflow_args(args: argparse.Namespace) -> None:
         raise ValueError("delay must be > 0")
 
 
+def _run_scrub(args: argparse.Namespace) -> None:
+    """Run the scrub subcommand."""
+    from cli_replay.scrub import scrub
+
+    to_t = args.to if args.to is not None else float("inf")
+    kwargs = dict(pattern=args.pattern, from_t=args.from_t, to_t=to_t)
+    if args.output:
+        with open(args.output, "w") as out:
+            dropped = scrub(filepath=args.file, output=out, **kwargs)
+    else:
+        dropped = scrub(filepath=args.file, output=sys.stdout, **kwargs)
+    sys.stderr.write(f"Scrubbed {dropped} event(s)\n")
+
+
 def _run(args: argparse.Namespace) -> None:
     """Dispatch to record or play with error handling."""
     try:
         if args.command == RECORD:
             from cli_replay.recorder import record
 
-            record(output=args.output)
+            record(output=args.output, script=args.script)
         elif args.command == PLAY:
             _validate_play_args(args)
 
@@ -79,6 +94,8 @@ def _run(args: argparse.Namespace) -> None:
             from cli_replay.reflow import reflow
 
             _run_with_output(reflow, args.file, args.output, delay_ms=args.delay)
+        elif args.command == SCRUB:
+            _run_scrub(args)
     except KeyboardInterrupt:
         sys.exit(130)
     except FileNotFoundError as e:
@@ -100,6 +117,9 @@ def _build_parser() -> argparse.ArgumentParser:
     rec = sub.add_parser(RECORD, help="Record a terminal session")
     rec.add_argument(
         "-o", "--output", help="Output filename (without .clirec extension)"
+    )
+    rec.add_argument(
+        "-s", "--script", help="Script file for automated input"
     )
 
     play_parser = sub.add_parser(PLAY, help="Replay a recorded session")
@@ -136,7 +156,26 @@ def _build_parser() -> argparse.ArgumentParser:
         "--delay", type=int, default=40, help="Delay between lines in ms (default: 40)"
     )
 
+    _add_scrub_parser(sub)
+
     return parser
+
+
+def _add_scrub_parser(sub: argparse._SubParsersAction) -> None:  # type: ignore[type-arg]
+    """Add the scrub subcommand parser."""
+    scrub_parser = sub.add_parser(SCRUB, help="Remove events matching a pattern")
+    scrub_parser.add_argument("file", help="Path to .clirec file")
+    scrub_parser.add_argument(
+        "--pattern", required=True, help="Regex to match against visible text"
+    )
+    scrub_parser.add_argument(
+        "--from", type=float, default=0, dest="from_t",
+        help="Start of time range (seconds)",
+    )
+    scrub_parser.add_argument(
+        "--to", type=float, default=None, help="End of time range (seconds)"
+    )
+    scrub_parser.add_argument("-o", "--output", help="Output file (default: stdout)")
 
 
 def main() -> None:

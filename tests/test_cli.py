@@ -57,13 +57,13 @@ class TestRecordArgParsing:
         with patch("sys.argv", ["clirec", "record", "-o", "demo"]):
             with patch("cli_replay.recorder.record") as mock_record:
                 main()
-                mock_record.assert_called_once_with(output="demo")
+                mock_record.assert_called_once_with(output="demo", script=None)
 
     def test_default_output(self):
         with patch("sys.argv", ["clirec", "record"]):
             with patch("cli_replay.recorder.record") as mock_record:
                 main()
-                mock_record.assert_called_once_with(output=None)
+                mock_record.assert_called_once_with(output=None, script=None)
 
 
 class TestNoSubcommand:
@@ -258,6 +258,34 @@ class TestEndToEndRedact:
         out_content = out.read_text()
         assert "kmasty" not in out_content
         assert "user" in out_content
+
+
+class TestScrubArgParsing:
+    def test_defaults(self):
+        with patch("sys.argv", ["clirec", "scrub", "--pattern", r"^\d+$", "t.clirec"]):
+            with patch("cli_replay.scrub.scrub", return_value=0) as mock_scrub:
+                main()
+                args = mock_scrub.call_args
+                assert args.kwargs["filepath"] == "t.clirec"
+                assert args.kwargs["pattern"] == r"^\d+$"
+                assert args.kwargs["from_t"] == 0
+                assert args.kwargs["to_t"] == float("inf")
+
+    def test_with_time_range(self):
+        with patch(
+            "sys.argv",
+            ["clirec", "scrub", "--pattern", r"^\d+$", "--from", "100", "--to", "200", "t.clirec"],
+        ):
+            with patch("cli_replay.scrub.scrub", return_value=0) as mock_scrub:
+                main()
+                args = mock_scrub.call_args
+                assert args.kwargs["from_t"] == 100.0
+                assert args.kwargs["to_t"] == 200.0
+
+    def test_pattern_required(self):
+        with patch("sys.argv", ["clirec", "scrub", "t.clirec"]):
+            with pytest.raises(SystemExit, match="2"):
+                main()
 
 
 class TestEndToEnd:
