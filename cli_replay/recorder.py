@@ -16,7 +16,7 @@ import time
 import tty
 from datetime import datetime, timezone
 from types import FrameType
-from typing import IO, TYPE_CHECKING, Callable
+from typing import IO, TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
     from cli_replay.script_feeder import OutputBuffer
@@ -195,7 +195,7 @@ def _start_script_feeder(
     return thread
 
 
-def _get_stdin() -> tuple[int | None, list[int] | None]:
+def _get_stdin() -> tuple[int | None, list[Any] | None]:
     """Get stdin fd and original terminal settings if available."""
     try:
         fd = sys.stdin.fileno()
