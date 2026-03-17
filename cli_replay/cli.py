@@ -118,9 +118,7 @@ def _build_parser() -> argparse.ArgumentParser:
     rec.add_argument(
         "-o", "--output", help="Output filename (without .clirec extension)"
     )
-    rec.add_argument(
-        "-s", "--script", help="Script file for automated input"
-    )
+    rec.add_argument("-s", "--script", help="Script file for automated input")
 
     play_parser = sub.add_parser(PLAY, help="Replay a recorded session")
     play_parser.add_argument("file", help="Path to .clirec file")
@@ -169,7 +167,10 @@ def _add_scrub_parser(sub: argparse._SubParsersAction) -> None:  # type: ignore[
         "--pattern", required=True, help="Regex to match against visible text"
     )
     scrub_parser.add_argument(
-        "--from", type=float, default=0, dest="from_t",
+        "--from",
+        type=float,
+        default=0,
+        dest="from_t",
         help="Start of time range (seconds)",
     )
     scrub_parser.add_argument(

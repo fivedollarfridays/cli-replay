@@ -15,9 +15,7 @@ from cli_replay.session import (
 )
 
 # Match \x1b[38;5;246m followed by digits, with optional dim wrapper (\x1b[2m...\x1b[22m)
-_COUNTER_RE = re.compile(
-    r"\x1b\[38;5;246m(?:\x1b\[2m)?\d+(?:\x1b\[22m)?"
-)
+_COUNTER_RE = re.compile(r"\x1b\[38;5;246m(?:\x1b\[2m)?\d+(?:\x1b\[22m)?")
 
 # Match bold digits inside synchronized update frames: \x1b[1m\d+
 _BOLD_DIGIT_RE = re.compile(r"\x1b\[1m(\d+)")

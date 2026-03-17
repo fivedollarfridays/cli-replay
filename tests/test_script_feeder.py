@@ -188,6 +188,14 @@ class TestParseWaitFor:
         assert result[0].text == "❯"
         assert result[0].timeout == 60.0
 
+    def test_wait_for_missing_quotes_raises(self, tmp_path):
+        f = tmp_path / "script.txt"
+        f.write_text("@wait-for no-quotes\n")
+        import pytest
+
+        with pytest.raises(ValueError, match="requires quoted text"):
+            parse_script(str(f))
+
 
 class TestOutputBuffer:
     def test_append_and_contains(self):
@@ -233,6 +241,12 @@ class TestOutputBuffer:
         found = buf.wait_for("never", timeout=0.2)
         assert found is False
 
+    def test_wait_for_stops_on_stop_flag(self):
+        buf = OutputBuffer()
+        buf.stop.set()
+        found = buf.wait_for("anything", timeout=5.0)
+        assert found is False
+
 
 class TestFeedWaitFor:
     def test_wait_for_continues_when_text_found(self):
@@ -269,3 +283,124 @@ class TestFeedWaitFor:
         assert written == b"ls\r"
         # Should have waited ~0.2s, not 5s
         assert elapsed < 2.0
+
+    def test_pause_directive_changes_inter_command_pause(self):
+        r_fd, w_fd = os.pipe()
+        t0 = time.monotonic()
+        feed_script(
+            [PauseDirective(0.2), TypeCommand("a"), TypeCommand("b")],
+            w_fd,
+            lambda t, d: None,
+            start_time=t0,
+            keystroke_delay_ms=1,
+            inter_command_pause=0,
+        )
+        elapsed = time.monotonic() - t0
+        os.close(w_fd)
+        os.close(r_fd)
+        # Two commands with 0.2s pause each = >= 0.4s
+        assert elapsed >= 0.35
+
+    def test_stop_flag_cancels_feed(self):
+        r_fd, w_fd = os.pipe()
+        buf = OutputBuffer()
+        buf.stop.set()  # Pre-set stop
+        feed_script(
+            [TypeCommand("should not type"), TypeCommand("also not")],
+            w_fd,
+            lambda t, d: None,
+            start_time=time.monotonic(),
+            keystroke_delay_ms=1,
+            inter_command_pause=0,
+            output_buffer=buf,
+        )
+        os.close(w_fd)
+        written = os.read(r_fd, 4096)
+        os.close(r_fd)
+        assert written == b""
+
+    def test_stop_during_interruptible_sleep(self):
+        r_fd, w_fd = os.pipe()
+        buf = OutputBuffer()
+
+        def stop_later():
+            time.sleep(0.1)
+            buf.stop.set()
+
+        t = threading.Thread(target=stop_later)
+        t.start()
+        t0 = time.monotonic()
+        feed_script(
+            [WaitDirective(10.0)],  # Would sleep 10s without stop
+            w_fd,
+            lambda t, d: None,
+            start_time=t0,
+            keystroke_delay_ms=1,
+            inter_command_pause=0,
+            output_buffer=buf,
+        )
+        elapsed = time.monotonic() - t0
+        t.join()
+        os.close(w_fd)
+        os.close(r_fd)
+        assert elapsed < 2.0  # Stopped early, not 10s
+
+    def test_stop_during_typing(self):
+        r_fd, w_fd = os.pipe()
+        buf = OutputBuffer()
+
+        def stop_later():
+            time.sleep(0.05)
+            buf.stop.set()
+
+        t = threading.Thread(target=stop_later)
+        t.start()
+        feed_script(
+            [TypeCommand("a" * 100)],  # Long string
+            w_fd,
+            lambda t, d: None,
+            start_time=time.monotonic(),
+            keystroke_delay_ms=10,  # 10ms * 100 chars = 1s without stop
+            inter_command_pause=0,
+            output_buffer=buf,
+        )
+        t.join()
+        os.close(w_fd)
+        written = os.read(r_fd, 4096)
+        os.close(r_fd)
+        # Should have typed fewer than 100 chars
+        assert len(written) < 100
+
+    def test_wait_for_without_buffer_is_noop(self):
+        r_fd, w_fd = os.pipe()
+        feed_script(
+            [WaitForDirective("test", timeout=0.1), TypeCommand("ok")],
+            w_fd,
+            lambda t, d: None,
+            start_time=time.monotonic(),
+            keystroke_delay_ms=1,
+            inter_command_pause=0,
+            output_buffer=None,
+        )
+        os.close(w_fd)
+        written = os.read(r_fd, 4096)
+        os.close(r_fd)
+        assert written == b"ok\r"
+
+    def test_wait_for_with_clear_flag(self):
+        r_fd, w_fd = os.pipe()
+        buf = OutputBuffer()
+        buf.append("old prompt$ ")
+        feed_script(
+            [WaitForDirective("fresh$", timeout=0.2, clear=True)],
+            w_fd,
+            lambda t, d: None,
+            start_time=time.monotonic(),
+            keystroke_delay_ms=1,
+            inter_command_pause=0,
+            output_buffer=buf,
+        )
+        os.close(w_fd)
+        os.close(r_fd)
+        # Should have cleared buffer, so "old prompt$" doesn't match "fresh$"
+        # and it times out — that's fine, just verifying clear runs

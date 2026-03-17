@@ -23,7 +23,9 @@ def _compute_delay(
     return min(gap, max_delay)
 
 
-def _is_echo(event: SessionEvent, prev_event: SessionEvent | None, show_input: bool) -> bool:
+def _is_echo(
+    event: SessionEvent, prev_event: SessionEvent | None, show_input: bool
+) -> bool:
     """Return True if this output event is just an echo of the prior input."""
     if not show_input or prev_event is None:
         return False

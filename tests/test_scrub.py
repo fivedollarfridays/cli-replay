@@ -4,7 +4,13 @@ import io
 import json
 import re
 
-from cli_replay.scrub import scrub, scrub_data, should_drop, strip_ansi
+from cli_replay.scrub import (
+    is_clean_spinner,
+    scrub,
+    scrub_data,
+    should_drop,
+    strip_ansi,
+)
 from cli_replay.session import SessionEvent
 
 
@@ -22,9 +28,10 @@ class TestStripAnsi:
         assert strip_ansi("\x1b[?2026h\x1b[?2026l") == ""
 
     def test_strips_mixed_with_newlines(self):
-        assert strip_ansi(
-            "\x1b[?2026h\r\x1b[26C\x1b[8A\x1b[38;5;246m5\x1b[39m\r\r\n\r\n"
-        ) == "\r5\r\r\n\r\n"
+        assert (
+            strip_ansi("\x1b[?2026h\r\x1b[26C\x1b[8A\x1b[38;5;246m5\x1b[39m\r\r\n\r\n")
+            == "\r5\r\r\n\r\n"
+        )
 
     def test_empty_string(self):
         assert strip_ansi("") == ""
@@ -161,6 +168,23 @@ def _make_clirec(tmp_path, events):
     return str(p)
 
 
+class TestIsCleanSpinner:
+    def test_clean_spinner_char(self):
+        data = "\x1b[?2026h\r\x1b[8A\x1b[38;5;215m✽\x1b[39m\r\r\n\x1b[?2026l"
+        assert is_clean_spinner(data) is True
+
+    def test_empty_visible_is_clean(self):
+        data = "\x1b[?2026h\r\x1b[8A\x1b[39m\r\r\n\x1b[?2026l"
+        assert is_clean_spinner(data) is True
+
+    def test_non_sync_frame(self):
+        assert is_clean_spinner("just text") is False
+
+    def test_messy_content(self):
+        data = "\x1b[?2026h\rRunning… ctrl+b\x1b[?2026l"
+        assert is_clean_spinner(data) is False
+
+
 class TestScrub:
     def test_drops_pure_digit_events(self, tmp_path):
         events = [
@@ -180,10 +204,7 @@ class TestScrub:
 
     def test_drops_all_sync_frames_in_range(self, tmp_path):
         """All sync frames are dropped in range, including clean spinners."""
-        raw_clean = (
-            "\x1b[?2026h\r\x1b[8A\x1b[38;5;215m✽\x1b[39m"
-            "\r\r\n\r\n\x1b[?2026l"
-        )
+        raw_clean = "\x1b[?2026h\r\x1b[8A\x1b[38;5;215m✽\x1b[39m\r\r\n\r\n\x1b[?2026l"
         events = [
             {"t": 5.0, "type": "o", "data": raw_clean},
         ]
@@ -208,7 +229,9 @@ class TestScrub:
         ]
         path = _make_clirec(tmp_path, events)
         out = io.StringIO()
-        dropped = scrub(filepath=path, output=out, pattern=r"^\d{1,4}$", from_t=0, to_t=20)
+        dropped = scrub(
+            filepath=path, output=out, pattern=r"^\d{1,4}$", from_t=0, to_t=20
+        )
         out.seek(0)
         lines = [json.loads(line) for line in out if line.strip()]
         assert len(lines) == 1  # header only
@@ -253,3 +276,39 @@ class TestScrub:
             filepath=path, output=out, pattern=r"^\d{1,4}$", from_t=0, to_t=20
         )
         assert count == 2
+
+    def test_invalid_regex_raises_valueerror(self, tmp_path):
+        events = [{"t": 1.0, "type": "o", "data": "test"}]
+        path = _make_clirec(tmp_path, events)
+        out = io.StringIO()
+        import pytest
+
+        with pytest.raises(ValueError, match="invalid regex"):
+            scrub(filepath=path, output=out, pattern=r"[invalid", from_t=0, to_t=20)
+
+    def test_input_events_passed_through(self, tmp_path):
+        events = [
+            {"t": 5.0, "type": "i", "data": "ls\r"},
+            {"t": 5.5, "type": "o", "data": "file.txt"},
+        ]
+        path = _make_clirec(tmp_path, events)
+        out = io.StringIO()
+        scrub(filepath=path, output=out, pattern=r"^\d+$", from_t=0, to_t=20)
+        out.seek(0)
+        lines = [json.loads(line) for line in out if line.strip()]
+        assert len(lines) == 3  # header + input + output
+        assert lines[1]["type"] == "i"
+
+    def test_drops_sync_frames_in_range(self, tmp_path):
+        raw_sync = "\x1b[?2026h\rsome TUI content\x1b[?2026l"
+        events = [
+            {"t": 5.0, "type": "o", "data": raw_sync},
+            {"t": 5.5, "type": "o", "data": "keep this"},
+        ]
+        path = _make_clirec(tmp_path, events)
+        out = io.StringIO()
+        dropped = scrub(filepath=path, output=out, pattern=r"^\d+$", from_t=0, to_t=20)
+        out.seek(0)
+        lines = [json.loads(line) for line in out if line.strip()]
+        assert len(lines) == 2  # header + kept non-sync
+        assert dropped == 1

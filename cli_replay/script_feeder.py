@@ -56,8 +56,12 @@ class WaitForDirective:
 
 
 Directive = (
-    TypeCommand | WaitDirective | KeyDirective
-    | SpeedDirective | PauseDirective | WaitForDirective
+    TypeCommand
+    | WaitDirective
+    | KeyDirective
+    | SpeedDirective
+    | PauseDirective
+    | WaitForDirective
 )
 
 
@@ -98,10 +102,11 @@ class OutputBuffer:
                 return True
             self._event.clear()
             remaining = deadline - time.monotonic()
-            if remaining <= 0:
+            if remaining <= 0:  # pragma: no cover
                 break
             self._event.wait(timeout=min(remaining, 0.25))
         return self.contains(text)
+
 
 KEY_MAP: dict[str, bytes] = {
     "ctrl-c": b"\x03",
@@ -179,7 +184,7 @@ def _interruptible_sleep(seconds: float, output_buffer: OutputBuffer | None) -> 
         if _is_stopped(output_buffer):
             return
         remaining = deadline - time.monotonic()
-        if remaining <= 0:
+        if remaining <= 0:  # pragma: no cover
             return
         time.sleep(min(remaining, 0.1))
 

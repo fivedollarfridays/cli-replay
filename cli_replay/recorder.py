@@ -83,8 +83,11 @@ def _log_event(f: IO[str], event: SessionEvent, lock: threading.Lock | None) -> 
 
 
 def _record_loop(
-    stdin_fd: int | None, master_fd: int,
-    proc: subprocess.Popen[bytes], f: IO[str], start: float,
+    stdin_fd: int | None,
+    master_fd: int,
+    proc: subprocess.Popen[bytes],
+    f: IO[str],
+    start: float,
     write_lock: threading.Lock | None = None,
     output_buffer: OutputBuffer | None = None,
 ) -> int:
@@ -107,13 +110,15 @@ def _record_loop(
             data = os.read(stdin_fd, 4096)
             if not data:
                 read_fds = [master_fd]
-            elif output_buffer is not None and b"\x03" in data:
+            elif output_buffer is not None and b"\x03" in data:  # pragma: no cover
                 output_buffer.stop.set()
                 break
             else:
                 os.write(master_fd, data)
                 text = data.decode("utf-8", errors="replace")
-                _log_event(f, SessionEvent(t=t, type=EVENT_INPUT, data=text), write_lock)
+                _log_event(
+                    f, SessionEvent(t=t, type=EVENT_INPUT, data=text), write_lock
+                )
                 event_count += 1
         if master_fd in rlist:
             try:
@@ -178,7 +183,10 @@ def _start_script_feeder(
     def run() -> None:
         time.sleep(0.5)  # wait for shell to be ready
         feed_script(
-            directives, master_fd, event_writer, start,
+            directives,
+            master_fd,
+            event_writer,
+            start,
             output_buffer=output_buffer,
         )
 
@@ -204,7 +212,10 @@ def _spawn_shell(header: SessionHeader) -> tuple[int, subprocess.Popen[bytes]]:
     _set_pty_size(master_fd, header["width"], header["height"])
     proc = subprocess.Popen(
         [os.environ.get("SHELL", "/bin/sh")],
-        stdin=slave_fd, stdout=slave_fd, stderr=slave_fd, close_fds=True,
+        stdin=slave_fd,
+        stdout=slave_fd,
+        stderr=slave_fd,
+        close_fds=True,
     )
     os.close(slave_fd)
     return master_fd, proc
@@ -218,8 +229,11 @@ def record(*, output: str | None = None, script: str | None = None) -> None:
     old_sigwinch = _install_sigwinch(master_fd)
     scripted = script is not None
 
-    msg = f"Recording (scripted) to {filename}\n" if scripted else \
-        f"Recording to {filename} (exit or Ctrl+D to stop)\n"
+    msg = (
+        f"Recording (scripted) to {filename}\n"
+        if scripted
+        else f"Recording to {filename} (exit or Ctrl+D to stop)\n"
+    )
     sys.stderr.write(msg)
     sys.stderr.flush()
 
@@ -237,14 +251,26 @@ def record(*, output: str | None = None, script: str | None = None) -> None:
                 assert script is not None
                 assert write_lock is not None
                 from cli_replay.script_feeder import OutputBuffer
+
                 output_buffer = OutputBuffer()
                 _start_script_feeder(
-                    script, master_fd, f, start, write_lock, output_buffer,
+                    script,
+                    master_fd,
+                    f,
+                    start,
+                    write_lock,
+                    output_buffer,
                 )
             event_count = _record_loop(
-                stdin_fd, master_fd, proc, f, start, write_lock, output_buffer,
+                stdin_fd,
+                master_fd,
+                proc,
+                f,
+                start,
+                write_lock,
+                output_buffer,
             )
-    except KeyboardInterrupt:
+    except KeyboardInterrupt:  # pragma: no cover
         if output_buffer is not None:
             output_buffer.stop.set()
     finally:

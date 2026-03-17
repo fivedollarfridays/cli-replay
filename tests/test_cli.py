@@ -274,13 +274,34 @@ class TestScrubArgParsing:
     def test_with_time_range(self):
         with patch(
             "sys.argv",
-            ["clirec", "scrub", "--pattern", r"^\d+$", "--from", "100", "--to", "200", "t.clirec"],
+            [
+                "clirec",
+                "scrub",
+                "--pattern",
+                r"^\d+$",
+                "--from",
+                "100",
+                "--to",
+                "200",
+                "t.clirec",
+            ],
         ):
             with patch("cli_replay.scrub.scrub", return_value=0) as mock_scrub:
                 main()
                 args = mock_scrub.call_args
                 assert args.kwargs["from_t"] == 100.0
                 assert args.kwargs["to_t"] == 200.0
+
+    def test_with_output_file(self, tmp_path):
+        out = str(tmp_path / "out.clirec")
+        with patch(
+            "sys.argv",
+            ["clirec", "scrub", "--pattern", r"^\d+$", "-o", out, "t.clirec"],
+        ):
+            with patch("cli_replay.scrub.scrub", return_value=0) as mock_scrub:
+                main()
+                args = mock_scrub.call_args
+                assert args.kwargs["filepath"] == "t.clirec"
 
     def test_pattern_required(self):
         with patch("sys.argv", ["clirec", "scrub", "t.clirec"]):
