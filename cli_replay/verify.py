@@ -54,12 +54,12 @@ def _build_schedule(
     if not cc_ranges:
         interval = max(duration / snapshots, _SNAPSHOT_INTERVAL)
         count = max(int(duration / interval), 1)
-        schedule = [interval] * count
+        uniform = [interval] * count
         # Cap last interval so total does not exceed duration
-        total = sum(schedule)
+        total = sum(uniform)
         if total > duration:
-            schedule[-1] -= total - duration
-        return schedule
+            uniform[-1] -= total - duration
+        return uniform
 
     shell_interval = max(duration / snapshots, _SNAPSHOT_INTERVAL)
     real_ranges = sorted((s / speed, e / speed) for s, e in cc_ranges)
