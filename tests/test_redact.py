@@ -6,10 +6,10 @@ import os
 from unittest.mock import patch
 
 from cli_replay.redact import (
-    _build_replacements,
     _make_pattern,
-    _redact_event,
+    build_replacements,
     redact,
+    redact_event,
 )
 from cli_replay.session import SessionEvent
 
@@ -22,7 +22,7 @@ class TestBuildReplacements:
             {"USER": "kmasty", "HOME": "/home/kmasty", "HOSTNAME": "Rig"},
         ):
             with patch("socket.gethostname", return_value="Rig"):
-                result = _build_replacements()
+                result = build_replacements()
 
         assert len(result) == 3
         assert result[0][1] == "/home/user"
@@ -33,7 +33,7 @@ class TestBuildReplacements:
         """Skips USER if not set, returns (home, host)."""
         with patch.dict(os.environ, {"HOME": "/home/kmasty"}, clear=True):
             with patch("socket.gethostname", return_value="Rig"):
-                result = _build_replacements()
+                result = build_replacements()
 
         assert len(result) == 2
         assert result[0][1] == "/home/user"
@@ -47,7 +47,7 @@ class TestBuildReplacements:
             clear=True,
         ):
             with patch("socket.gethostname", return_value=""):
-                result = _build_replacements()
+                result = build_replacements()
 
         assert len(result) == 2
         assert result[0][1] == "/home/user"
@@ -57,7 +57,7 @@ class TestBuildReplacements:
         """Skips HOME if not set, returns (user, host)."""
         with patch.dict(os.environ, {"USER": "kmasty"}, clear=True):
             with patch("socket.gethostname", return_value="Rig"):
-                result = _build_replacements()
+                result = build_replacements()
 
         assert len(result) == 2
         assert result[0][1] == "user"
@@ -67,7 +67,7 @@ class TestBuildReplacements:
         """Returns empty list if all env vars missing."""
         with patch.dict(os.environ, {}, clear=True):
             with patch("socket.gethostname", return_value=""):
-                result = _build_replacements()
+                result = build_replacements()
 
         assert result == []
 
@@ -84,7 +84,7 @@ class TestRedactEvent:
             (_make_pattern("kmasty"), "user"),
             (_make_pattern("Rig"), "host"),
         ]
-        result = _redact_event(event, replacements)
+        result = redact_event(event, replacements)
 
         assert result["data"] == "user@host:~$ "
         assert result["t"] == 0.0
@@ -98,7 +98,7 @@ class TestRedactEvent:
             "data": "/home/kmasty/projects\r\n",
         }
         replacements = [(_make_pattern("/home/kmasty"), "/home/user")]
-        result = _redact_event(event, replacements)
+        result = redact_event(event, replacements)
 
         assert result["data"] == "/home/user/projects\r\n"
 
@@ -110,7 +110,7 @@ class TestRedactEvent:
             "data": "Rig is my machine\r\n",
         }
         replacements = [(_make_pattern("Rig"), "host")]
-        result = _redact_event(event, replacements)
+        result = redact_event(event, replacements)
 
         assert result["data"] == "host is my machine\r\n"
 
@@ -122,7 +122,7 @@ class TestRedactEvent:
             "data": "ADVISORY mode\r\n",
         }
         replacements = [(_make_pattern("Rig"), "host")]
-        result = _redact_event(event, replacements)
+        result = redact_event(event, replacements)
 
         assert result["data"] == "ADVISORY mode\r\n"
 
@@ -134,7 +134,7 @@ class TestRedactEvent:
             "data": "$ echo hello\r\n",
         }
         replacements = [(_make_pattern("nonexistent"), "replaced")]
-        result = _redact_event(event, replacements)
+        result = redact_event(event, replacements)
 
         assert result["data"] == "$ echo hello\r\n"
 
@@ -149,7 +149,7 @@ class TestRedactEvent:
             (_make_pattern("kmasty"), "user"),
             (_make_pattern("somehost"), "localhost"),
         ]
-        result = _redact_event(event, replacements)
+        result = redact_event(event, replacements)
 
         assert "\u001b[01;32m" in result["data"]
         assert "\u001b[00m" in result["data"]

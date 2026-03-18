@@ -17,7 +17,7 @@ from cli_replay.session import (
 )
 
 
-def _build_replacements() -> list[tuple[re.Pattern[str], str]]:
+def build_replacements() -> list[tuple[re.Pattern[str], str]]:
     """Detect username, hostname, home path from environment.
 
     Returns list of (pattern, new) replacement tuples ordered longest-first
@@ -55,7 +55,7 @@ def _make_pattern(text: str) -> re.Pattern[str]:
     return re.compile(escaped)
 
 
-def _redact_event(
+def redact_event(
     event: SessionEvent, replacements: list[tuple[re.Pattern[str], str]]
 ) -> SessionEvent:
     """Apply replacements to event data field.
@@ -77,13 +77,13 @@ def redact(*, filepath: str, output: IO[str]) -> None:
     then applies replacements to all event data fields.
     Header is preserved unchanged.
     """
-    replacements = _build_replacements()
+    replacements = build_replacements()
 
     with open(filepath) as f:
         header = read_header(f)
         write_header(output, header)
         for event in iter_events(f):
-            redacted = _redact_event(event, replacements)
+            redacted = redact_event(event, replacements)
             write_event(output, redacted)
 
 
