@@ -23,9 +23,7 @@ class TestPiiPatterns:
             assert any(p.search("cd /home/testuser") for p in pats)
 
     def test_empty_env(self):
-        with patch.dict(
-            "os.environ", {"USER": "", "HOME": ""}, clear=False
-        ):
+        with patch.dict("os.environ", {"USER": "", "HOME": ""}, clear=False):
             pats = [p for p, _r in build_replacements()]
             # build_replacements may include hostname even with empty USER/HOME
             # so we just check no user/home patterns
@@ -309,6 +307,78 @@ class TestBuildScheduleDurationCap:
         )
         total = sum(schedule)
         assert total <= duration + 0.001
+
+
+class TestBuildScheduleStepBreak:
+    """_build_schedule breaks when step reaches 0."""
+
+    def test_tiny_duration_does_not_loop_forever(self) -> None:
+        """Very small duration causes step to hit 0, triggering break."""
+        from cli_replay.verify import _build_schedule
+
+        # Duration so small that min(step, duration - t) hits 0
+        schedule = _build_schedule(
+            duration=0.0001,
+            speed=50,
+            snapshots=5,
+            cc_ranges=[(0.0, 5.0)],
+        )
+        # Should produce at most a few entries, not infinite loop
+        assert len(schedule) <= 5
+        assert sum(schedule) <= 0.0001 + 0.001
+
+    def test_zero_duration_with_cc_ranges(self) -> None:
+        """Zero duration with cc_ranges triggers step<=0 break immediately."""
+        from cli_replay.verify import _build_schedule
+
+        schedule = _build_schedule(
+            duration=0.0,
+            speed=50,
+            snapshots=5,
+            cc_ranges=[(0.0, 5.0)],
+        )
+        assert schedule == []
+
+    def test_step_zero_triggers_break(self) -> None:
+        """When CC interval is 0, the step<=0 guard fires."""
+        from cli_replay.verify import _build_schedule
+
+        with patch("cli_replay.verify._CC_SNAPSHOT_INTERVAL", 0.0):
+            schedule = _build_schedule(
+                duration=1.0,
+                speed=50,
+                snapshots=5,
+                cc_ranges=[(0.0, 50.0)],
+            )
+        # step=0 on first iteration triggers break, so empty schedule
+        assert schedule == []
+
+
+class TestDeferredComputeDuration:
+    """verify_recording defers compute_duration import when duration <= 0."""
+
+    def test_uses_compute_duration_when_no_duration(self, tmp_path):
+        """When duration defaults to 0, compute_duration is called."""
+        fixture = tmp_path / "test.clirec"
+        fixture.write_text(
+            '{"version":1,"width":80,"height":24,"timestamp":"2026-01-01T00:00:00"}\n'
+        )
+
+        def mock_run(cmd, **kwargs):
+            result = MagicMock()
+            result.returncode = 0
+            result.stdout = "clean output"
+            return result
+
+        with (
+            patch("cli_replay.verify.shutil.which", return_value="/usr/bin/tmux"),
+            patch("cli_replay.tmux.subprocess.run", side_effect=mock_run),
+            patch("cli_replay.verify.time.sleep"),
+            patch.dict("os.environ", {"USER": "", "HOME": ""}),
+            patch("cli_replay.export.compute_duration", return_value=5.0) as mock_cd,
+        ):
+            verify_recording(str(fixture), speed=50, snapshots=2)
+            mock_cd.assert_called_once_with(str(fixture), speed=50.0)
 
 
 class TestCCDetectionUsesRanges:

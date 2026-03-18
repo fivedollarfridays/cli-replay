@@ -441,6 +441,30 @@ def test_cli_validate_sequences_fail(capsys: object) -> None:
         os.unlink(path)
 
 
+def test_validate_sequences_skips_input_events() -> None:
+    """Input events (type 'i') are skipped by validate_sequences."""
+    from cli_replay.quality import validate_sequences
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".clirec", delete=False) as f:
+        path = f.name
+    try:
+        _write_fixture(
+            path,
+            [
+                {"t": 0.0, "type": "o", "data": "\x1b[32mhello\x1b[0m"},
+                {"t": 0.5, "type": "i", "data": "\x1b["},
+                {"t": 1.0, "type": "o", "data": "\x1b[34mworld\x1b[0m"},
+            ],
+        )
+        report = validate_sequences(path)
+        # Input event with incomplete CSI should be ignored
+        assert report.incomplete_csi == 0
+        assert report.total_sequences == 4
+        assert report.valid is True
+    finally:
+        os.unlink(path)
+
+
 def test_cli_check_quality_file_not_found() -> None:
     """check-quality exits 1 for missing file."""
     from unittest.mock import patch
