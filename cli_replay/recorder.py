@@ -115,9 +115,17 @@ def _record_loop(
                 event_count += 1
         if master_fd in rlist:
             try:
-                data = os.read(master_fd, 4096)
+                data = os.read(master_fd, 65536)
             except OSError:
                 break
+            # Drain burst stragglers within 5ms window (max 10 reads)
+            for _ in range(10):
+                if not select.select([master_fd], [], [], 0.005)[0]:
+                    break
+                try:
+                    data += os.read(master_fd, 65536)
+                except OSError:
+                    break
             if not data:
                 break
             os.write(sys.stdout.fileno(), data)
