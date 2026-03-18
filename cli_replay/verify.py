@@ -92,8 +92,12 @@ def _run_snapshots(
         elapsed += interval
         failures.extend(
             _check_snapshot(
-                i + 1, capture_pane(_SESSION_NAME), pii,
-                real_time=elapsed, speed=speed, cc_ranges=cc_ranges,
+                i + 1,
+                capture_pane(_SESSION_NAME),
+                pii,
+                real_time=elapsed,
+                speed=speed,
+                cc_ranges=cc_ranges,
             )
         )
     return failures
@@ -124,7 +128,10 @@ def verify_recording(
     try:
         start_session(
             _SESSION_NAME,
-            header.get("width", 80), header.get("height", 24), filepath, speed
+            header.get("width", 80),
+            header.get("height", 24),
+            filepath,
+            speed,
         )
         if duration <= 0:
             from cli_replay.export import compute_duration

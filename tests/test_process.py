@@ -282,9 +282,7 @@ def _run_process_recording(tmp_path):
     )
     output = StringIO()
     test_replacements = [(re.compile(r"testuser"), "user")]
-    with patch(
-        "cli_replay.process.build_replacements", return_value=test_replacements
-    ):
+    with patch("cli_replay.process.build_replacements", return_value=test_replacements):
         process_recording(str(fixture), config, output)
 
     output.seek(0)

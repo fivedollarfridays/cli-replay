@@ -76,9 +76,7 @@ def _run_post(args: argparse.Namespace) -> None:
     elif args.command == COMPARE:
         from cli_replay.compare import compare_recordings
 
-        result = compare_recordings(
-            args.file1, args.file2, snapshots=args.snapshots
-        )
+        result = compare_recordings(args.file1, args.file2, snapshots=args.snapshots)
         if not result.matched:
             sys.stderr.write(f"{result.differing} snapshot(s) differ\n")
             sys.exit(1)
@@ -252,7 +250,9 @@ def _add_post_parsers(sub: argparse._SubParsersAction) -> None:  # type: ignore[
     cq = sub.add_parser(CHECK_QUALITY, help="Check recording for split sequences")
     cq.add_argument("file", help="Path to .clirec file")
 
-    vs = sub.add_parser(VALIDATE_SEQUENCES, help="Validate escape sequence completeness")
+    vs = sub.add_parser(
+        VALIDATE_SEQUENCES, help="Validate escape sequence completeness"
+    )
     vs.add_argument("file", help="Path to .clirec file")
 
 

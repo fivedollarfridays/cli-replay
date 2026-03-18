@@ -12,8 +12,15 @@ def start_session(
     """Create a detached tmux session and start playback."""
     subprocess.run(
         [
-            "tmux", "new-session", "-d", "-s", session,
-            "-x", str(width), "-y", str(height),
+            "tmux",
+            "new-session",
+            "-d",
+            "-s",
+            session,
+            "-x",
+            str(width),
+            "-y",
+            str(height),
         ],
         check=True,
         capture_output=True,
