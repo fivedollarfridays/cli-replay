@@ -31,7 +31,7 @@ def _check_snapshot(
     if _DA_RESPONSE_RE.search(pane):
         failures.append(f"snapshot {snapshot_num}: DA response garbage detected")
     # PII check only applies to shell sections — CC sections are raw
-    in_cc = cc_ranges and is_in_cc_range(real_time * speed, cc_ranges or [])
+    in_cc = cc_ranges is not None and is_in_cc_range(real_time * speed, cc_ranges)
     if not in_cc:
         for pat in pii:
             if pat.search(pane):
@@ -90,10 +90,14 @@ def _run_snapshots(
     for i, interval in enumerate(schedule):
         time.sleep(interval)
         elapsed += interval
+        pane = capture_pane(_SESSION_NAME)
+        if pane is None:
+            failures.append(f"snapshot {i + 1}: capture failed")
+            continue
         failures.extend(
             _check_snapshot(
                 i + 1,
-                capture_pane(_SESSION_NAME),
+                pane,
                 pii,
                 real_time=elapsed,
                 speed=speed,

@@ -56,9 +56,18 @@ class TestCapturePane:
         from cli_replay.tmux import capture_pane
 
         with patch("cli_replay.tmux.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="pane content\n")
+            mock_run.return_value = MagicMock(stdout="pane content\n", returncode=0)
             result = capture_pane("test-sess")
             assert result == "pane content\n"
+
+    def test_returns_none_on_failure(self) -> None:
+        """capture_pane returns None when subprocess fails."""
+        from cli_replay.tmux import capture_pane
+
+        with patch("cli_replay.tmux.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(stdout="", returncode=1)
+            result = capture_pane("test-sess")
+            assert result is None
 
 
 class TestKillSession:

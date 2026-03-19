@@ -10,7 +10,7 @@ from dataclasses import dataclass, field, replace as dc_replace
 from cli_replay.archive import archive_if_exists
 from cli_replay.coalesce import coalesce_events
 from cli_replay.process import ProcessConfig, load_config, process_recording
-from cli_replay.quality import check_quality
+from cli_replay.quality import QualityReport, check_quality
 from cli_replay.session import read_header
 from cli_replay.notes import write_notes
 from cli_replay.verify import verify_recording
@@ -49,8 +49,10 @@ def _run_archive(output_path: str) -> tuple[str, str]:
         return ("archive", "FAIL")
 
 
-def _run_check_quality(input_path: str) -> tuple[tuple[str, str], bool]:
-    """Run quality check on input. Returns (step_result, has_splits)."""
+def _run_check_quality(
+    input_path: str,
+) -> tuple[tuple[str, str], bool, QualityReport | None]:
+    """Run quality check on input. Returns (step_result, has_splits, report)."""
     try:
         qr = check_quality(input_path)
         has_splits = not qr.passed
@@ -61,10 +63,10 @@ def _run_check_quality(input_path: str) -> tuple[tuple[str, str], bool]:
             )
         else:
             _log("Quality: PASS (no splits)")
-        return ("check-quality", "PASS"), has_splits
+        return ("check-quality", "PASS"), has_splits, qr
     except _STEP_ERRORS as exc:
         _log(f"Quality check failed: {exc}")
-        return ("check-quality", "FAIL"), False
+        return ("check-quality", "FAIL"), False, None
 
 
 def _run_coalesce(
@@ -124,10 +126,13 @@ def _run_verify(config: ProcessConfig) -> tuple[str, str]:
         return ("verify", "FAIL")
 
 
-def _run_report(output_path: str) -> tuple[tuple[str, str], str | None]:
+def _run_report(
+    output_path: str,
+    quality_report: QualityReport | None = None,
+) -> tuple[tuple[str, str], str | None]:
     """Generate final report notes. Returns (step_result, notes_path)."""
     try:
-        qr = check_quality(output_path)
+        qr = quality_report or check_quality(output_path)
         with open(output_path) as hf:
             header = dict(read_header(hf))
         notes_path = write_notes(output_path, header, [], split_report=qr)
@@ -140,25 +145,20 @@ def _run_report(output_path: str) -> tuple[tuple[str, str], str | None]:
 
 def _write_failure_notes(result: PipelineResult, output_path: str) -> None:
     """Write failure notes when pipeline aborts."""
-    failures = [
-        f"Step '{name}' {status}" for name, status in result.steps if status == "FAIL"
-    ]
+    failed = [f"Step '{n}' {s}" for n, s in result.steps if s == "FAIL"]
     try:
-        notes_path = write_notes(output_path, {}, failures)
-        result.notes_path = notes_path
-        _log(f"Failure notes written to {notes_path}")
+        result.notes_path = write_notes(output_path, {}, failed)
+        _log(f"Failure notes written to {result.notes_path}")
     except Exception as exc:
         _log(f"Could not write failure notes: {exc}")
 
 
 def _abort(result: PipelineResult, output_path: str) -> PipelineResult:
-    """Handle pipeline abort: write failure notes and return result."""
     _write_failure_notes(result, output_path)
     return result
 
 
 def _step_failed(result: PipelineResult, step: tuple[str, str]) -> bool:
-    """Append a step result and return True if it failed."""
     result.steps.append(step)
     return step[1] == "FAIL"
 
@@ -173,7 +173,7 @@ def run_pipeline(config_path: str) -> PipelineResult:
         if _step_failed(result, _run_archive(config.output_path)):
             return _abort(result, config.output_path)
 
-        quality_step, has_splits = _run_check_quality(config.input_path)
+        quality_step, has_splits, quality_report = _run_check_quality(config.input_path)
         if _step_failed(result, quality_step):
             return _abort(result, config.output_path)
 
@@ -190,7 +190,7 @@ def run_pipeline(config_path: str) -> PipelineResult:
         if _step_failed(result, _run_verify(config)):
             return _abort(result, config.output_path)
 
-        report_step, notes_path = _run_report(config.output_path)
+        report_step, notes_path = _run_report(config.output_path, quality_report)
         result.steps.append(report_step)
         result.notes_path = notes_path
 

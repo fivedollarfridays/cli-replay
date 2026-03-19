@@ -5,7 +5,13 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from cli_replay.session import EVENT_OUTPUT, iter_events, read_header
+from cli_replay.session import (
+    EVENT_OUTPUT,
+    SYNC_BEGIN,
+    SYNC_FINISH,
+    iter_events,
+    read_header,
+)
 
 
 @dataclass
@@ -26,9 +32,6 @@ class SequenceReport:
 _CSI_PATTERN = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 # Match start of CSI without terminator (at end of string)
 _INCOMPLETE_CSI = re.compile(r"\x1b\[[0-9;?]*$")
-
-_SYNC_BEGIN = "\x1b[?2026h"
-_SYNC_FINISH = "\x1b[?2026l"
 
 
 def validate_sequences(filepath: str) -> SequenceReport:
@@ -53,8 +56,8 @@ def validate_sequences(filepath: str) -> SequenceReport:
                 incomplete += 1
 
             # Check sync update pairing within event
-            begins = data.count(_SYNC_BEGIN)
-            ends = data.count(_SYNC_FINISH)
+            begins = data.count(SYNC_BEGIN)
+            ends = data.count(SYNC_FINISH)
             unmatched += abs(begins - ends)
 
     return SequenceReport(
@@ -105,8 +108,8 @@ def check_quality(filepath: str) -> QualityReport:
 
                 if (
                     gap <= _SPLIT_THRESHOLD_S
-                    and _SYNC_BEGIN in prev_data
-                    and _SYNC_FINISH not in prev_data
+                    and SYNC_BEGIN in prev_data
+                    and SYNC_FINISH not in prev_data
                 ):
                     split_sync_updates += 1
 

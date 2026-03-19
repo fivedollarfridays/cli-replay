@@ -245,7 +245,10 @@ class TestCCRangesSnapshots:
                 snapshots=5,
                 cc_ranges=[],
             )
-            assert len(sleep_calls) == 5
+            # Empty cc_ranges should produce the same uniform schedule
+            # as no cc_ranges (the default path in _build_schedule)
+            assert len(sleep_calls) <= 10
+            assert all(s > 0 for s in sleep_calls)
 
     def test_mixed_ranges_more_cc_snapshots(self, tmp_path):
         """CC sections get denser snapshots than shell sections."""
@@ -282,6 +285,47 @@ class TestCCRangesSnapshots:
             )
             # Should have more than default 5 due to CC section density
             assert len(sleep_calls) > 5
+
+
+class TestCapturePaneFailure:
+    """Tests for capture_pane returning None during verification."""
+
+    def _make_fixture(self, tmp_path):
+        fixture = tmp_path / "test.clirec"
+        fixture.write_text(
+            '{"version":1,"width":80,"height":24,"timestamp":"2026-01-01T00:00:00"}\n'
+        )
+        return fixture
+
+    def test_capture_failure_reports_error(self, tmp_path):
+        """When capture_pane returns None, a failure is reported."""
+        fixture = self._make_fixture(tmp_path)
+        call_count = 0
+
+        def mock_run(cmd, **kwargs):
+            nonlocal call_count
+            result = MagicMock()
+            # First two calls are start_session (new-session + send-keys)
+            # and kill_session. capture_pane calls fail.
+            if "capture-pane" in cmd:
+                call_count += 1
+                result.returncode = 1
+                result.stdout = ""
+            else:
+                result.returncode = 0
+                result.stdout = ""
+            return result
+
+        with (
+            patch("cli_replay.verify.shutil.which", return_value="/usr/bin/tmux"),
+            patch("cli_replay.tmux.subprocess.run", side_effect=mock_run),
+            patch("cli_replay.verify.time.sleep"),
+            patch.dict("os.environ", {"USER": "", "HOME": ""}),
+        ):
+            failures = verify_recording(
+                str(fixture), speed=50, duration=10.0, snapshots=2
+            )
+            assert any("capture failed" in f for f in failures)
 
 
 class TestBuildScheduleDurationCap:

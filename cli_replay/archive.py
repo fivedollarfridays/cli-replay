@@ -7,7 +7,7 @@ before the original is overwritten.
 from __future__ import annotations
 
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -32,7 +32,7 @@ def archive_if_exists(filepath: str) -> str | None:
     archive_dir = source.parent / "recordings"
     archive_dir.mkdir(parents=True, exist_ok=True)
 
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     archive_name = f"{source.stem}-{stamp}{source.suffix}"
     archive_path = archive_dir / archive_name
 

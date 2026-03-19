@@ -10,15 +10,13 @@ import yaml
 
 from cli_replay.redact import build_replacements, redact_event
 from cli_replay.session import (
+    DA_QUERY_RE,
     SessionEvent,
     iter_events,
     read_header,
     write_event,
     write_header,
 )
-
-# DA queries cause the player's terminal to respond with visible garbage
-_DA_QUERY_RE = re.compile(r"\x1b\[>0q|\x1b\[c")
 
 
 @dataclass
@@ -85,11 +83,11 @@ def process_recording(
         for event in iter_events(f):
             if is_in_cc_range(event["t"], config.cc_ranges):
                 # CC: strip DA queries only, everything else raw
-                if event["type"] == "o" and _DA_QUERY_RE.search(event["data"]):
+                if event["type"] == "o" and DA_QUERY_RE.search(event["data"]):
                     event = SessionEvent(
                         t=event["t"],
                         type=event["type"],
-                        data=_DA_QUERY_RE.sub("", event["data"]),
+                        data=DA_QUERY_RE.sub("", event["data"]),
                     )
                 write_event(output, event)
             else:

@@ -30,22 +30,23 @@ def _play_and_capture(
     width: int,
     height: int,
     speed: int,
-    timestamps: list[float],
+    intervals: list[float],
 ) -> list[str]:
-    """Play a recording in tmux and capture panes at given timestamps."""
+    """Play a recording in tmux and capture panes at given intervals."""
     kill_session(session)
     captures: list[str] = []
     try:
         start_session(session, width, height, filepath, speed)
-        for ts in timestamps:
-            time.sleep(ts)
-            captures.append(capture_pane(session))
+        for iv in intervals:
+            time.sleep(iv)
+            pane = capture_pane(session)
+            captures.append(pane if pane is not None else "")
     finally:
         kill_session(session)
     return captures
 
 
-def _compute_timestamps(duration: float, snapshots: int) -> list[float]:
+def _compute_intervals(duration: float, snapshots: int) -> list[float]:
     """Compute evenly spaced sleep intervals for snapshots."""
     interval = max(duration / snapshots, 0.1)
     return [interval] * snapshots
@@ -79,17 +80,17 @@ def compare_recordings(
     dur2 = compute_duration(file2, speed=float(speed))
     duration = min(dur1, dur2)
 
-    timestamps = _compute_timestamps(duration, snapshots)
+    intervals = _compute_intervals(duration, snapshots)
 
-    caps1 = _play_and_capture("clirec-cmp-1", file1, width, height, speed, timestamps)
-    caps2 = _play_and_capture("clirec-cmp-2", file2, width, height, speed, timestamps)
+    caps1 = _play_and_capture("clirec-cmp-1", file1, width, height, speed, intervals)
+    caps2 = _play_and_capture("clirec-cmp-2", file2, width, height, speed, intervals)
 
     matching = 0
     differing = 0
     diffs: list[tuple[float, str, str]] = []
     elapsed = 0.0
-    for ts, c1, c2 in zip(timestamps, caps1, caps2):
-        elapsed += ts
+    for iv, c1, c2 in zip(intervals, caps1, caps2):
+        elapsed += iv
         if c1 == c2:
             matching += 1
         else:

@@ -13,6 +13,14 @@ EVENT_INPUT = "i"
 EVENT_OUTPUT = "o"
 VALID_EVENT_TYPES = (EVENT_INPUT, EVENT_OUTPUT)
 
+# DA queries cause the player's terminal to respond with visible garbage
+# DA1: \x1b[c  XTVERSION: \x1b[>0q
+DA_QUERY_RE = re.compile(r"\x1b\[>0q|\x1b\[c")
+
+# Synchronized update markers
+SYNC_BEGIN = "\x1b[?2026h"
+SYNC_FINISH = "\x1b[?2026l"
+
 
 class SessionHeader(TypedDict):
     version: int
