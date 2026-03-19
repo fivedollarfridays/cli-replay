@@ -33,13 +33,18 @@ def start_session(
     )
 
 
-def capture_pane(session: str) -> str:
-    """Capture the current tmux pane content."""
+def capture_pane(session: str) -> str | None:
+    """Capture the current tmux pane content.
+
+    Returns the pane text on success, or ``None`` if the subprocess fails.
+    """
     result = subprocess.run(
         ["tmux", "capture-pane", "-t", session, "-p"],
         capture_output=True,
         text=True,
     )
+    if result.returncode != 0:
+        return None
     return result.stdout
 
 

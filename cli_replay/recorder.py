@@ -77,6 +77,19 @@ def _log_event(f: IO[str], event: SessionEvent, lock: threading.Lock | None) -> 
         write_event(f, event)
 
 
+def _read_master_burst(master_fd: int) -> bytes:
+    """Read from master_fd, draining burst stragglers within 5ms (max 10 reads)."""
+    data = os.read(master_fd, 65536)
+    for _ in range(10):
+        if not select.select([master_fd], [], [], 0.005)[0]:
+            break
+        try:
+            data += os.read(master_fd, 65536)
+        except OSError:
+            break
+    return data
+
+
 def _record_loop(
     stdin_fd: int | None,
     master_fd: int,
@@ -109,23 +122,13 @@ def _record_loop(
             else:
                 os.write(master_fd, data)
                 text = data.decode("utf-8", errors="replace")
-                _log_event(
-                    f, SessionEvent(t=t, type=EVENT_INPUT, data=text), write_lock
-                )
+                _log_event(f, SessionEvent(t=t, type=EVENT_INPUT, data=text), write_lock)
                 event_count += 1
         if master_fd in rlist:
             try:
-                data = os.read(master_fd, 65536)
+                data = _read_master_burst(master_fd)
             except OSError:
                 break
-            # Drain burst stragglers within 5ms window (max 10 reads)
-            for _ in range(10):
-                if not select.select([master_fd], [], [], 0.005)[0]:
-                    break
-                try:
-                    data += os.read(master_fd, 65536)
-                except OSError:
-                    break
             if not data:
                 break
             os.write(sys.stdout.fileno(), data)

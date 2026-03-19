@@ -7,6 +7,9 @@ from typing import IO
 
 from cli_replay.session import (
     ANSI_RE,
+    DA_QUERY_RE,
+    SYNC_BEGIN,
+    SYNC_FINISH,
     SessionEvent,
     iter_events,
     read_header,
@@ -20,9 +23,6 @@ _COUNTER_RE = re.compile(r"\x1b\[38;5;246m(?:\x1b\[2m)?\d+(?:\x1b\[22m)?")
 # Match bold digits inside synchronized update frames: \x1b[1m\d+
 _BOLD_DIGIT_RE = re.compile(r"\x1b\[1m(\d+)")
 
-# Terminal queries that cause the terminal to respond with visible garbage
-# DA1: \x1b[c  XTVERSION: \x1b[>0q
-_TERMINAL_QUERY_RE = re.compile(r"\x1b\[>0q|\x1b\[c")
 _TITLE_RE = re.compile(r"\x1b\][^\x07]*\x07")
 
 _CLEAN_SPINNER_RE = re.compile(
@@ -34,7 +34,7 @@ _CLEAN_SPINNER_RE = re.compile(
 
 def is_clean_spinner(data: str) -> bool:
     """Return True if a sync frame contains only spinner/thinking animation."""
-    if "\x1b[?2026h" not in data:
+    if SYNC_BEGIN not in data:
         return False
     visible = ANSI_RE.sub("", data).strip()
     if not visible:
@@ -51,10 +51,10 @@ def scrub_data(data: str) -> str:
     """Strip colored digit counter sequences and terminal queries from event data."""
     result = _COUNTER_RE.sub("", data)
     # Strip bold digits inside synchronized update frames
-    if "\x1b[?2026h" in result or "\x1b[?2026l" in result:
+    if SYNC_BEGIN in result or SYNC_FINISH in result:
         result = _BOLD_DIGIT_RE.sub("\x1b[1m", result)
     # Strip terminal queries that cause visible garbage during playback
-    result = _TERMINAL_QUERY_RE.sub("", result)
+    result = DA_QUERY_RE.sub("", result)
     # Strip terminal title updates
     result = _TITLE_RE.sub("", result)
     return result
@@ -103,7 +103,7 @@ def scrub(
                 dropped += 1
                 continue
             # Drop sync frames in range
-            if in_range and "\x1b[?2026h" in event["data"]:
+            if in_range and SYNC_BEGIN in event["data"]:
                 dropped += 1
                 continue
             # Scrub terminal queries and counter digits from all output
