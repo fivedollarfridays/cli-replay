@@ -179,9 +179,7 @@ class TestCoalesceSkip:
         _create_recording(input_file)
         cfg_path = _write_config(tmp_path, input_file)
 
-        mock_quality.return_value = QualityReport(
-            split_escapes=5, split_sync_updates=0
-        )
+        mock_quality.return_value = QualityReport(split_escapes=5, split_sync_updates=0)
 
         result = run_pipeline(cfg_path)
 
@@ -287,9 +285,7 @@ class TestTempFileCleanup:
         _create_recording(input_file)
         cfg_path = _write_config(tmp_path, input_file)
 
-        mock_quality.return_value = QualityReport(
-            split_escapes=5, split_sync_updates=0
-        )
+        mock_quality.return_value = QualityReport(split_escapes=5, split_sync_updates=0)
 
         # Track the temp file path used by coalesce
         temp_paths: list[str] = []
@@ -332,9 +328,7 @@ class TestTempFileCleanup:
         _create_recording(input_file)
         cfg_path = _write_config(tmp_path, input_file)
 
-        mock_quality.return_value = QualityReport(
-            split_escapes=5, split_sync_updates=0
-        )
+        mock_quality.return_value = QualityReport(split_escapes=5, split_sync_updates=0)
 
         temp_paths: list[str] = []
 

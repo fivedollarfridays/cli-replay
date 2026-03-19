@@ -173,9 +173,7 @@ def run_pipeline(config_path: str) -> PipelineResult:
         if _step_failed(result, _run_archive(config.output_path)):
             return _abort(result, config.output_path)
 
-        quality_step, has_splits, quality_report = _run_check_quality(
-            config.input_path
-        )
+        quality_step, has_splits, quality_report = _run_check_quality(config.input_path)
         if _step_failed(result, quality_step):
             return _abort(result, config.output_path)
 

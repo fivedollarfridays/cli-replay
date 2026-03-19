@@ -122,7 +122,9 @@ def _record_loop(
             else:
                 os.write(master_fd, data)
                 text = data.decode("utf-8", errors="replace")
-                _log_event(f, SessionEvent(t=t, type=EVENT_INPUT, data=text), write_lock)
+                _log_event(
+                    f, SessionEvent(t=t, type=EVENT_INPUT, data=text), write_lock
+                )
                 event_count += 1
         if master_fd in rlist:
             try:

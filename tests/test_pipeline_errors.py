@@ -317,9 +317,7 @@ class TestTempFileCleanupOSError:
         _create_recording(input_file)
         cfg_path = _write_config(tmp_path, input_file)
 
-        mock_quality.return_value = QualityReport(
-            split_escapes=5, split_sync_updates=0
-        )
+        mock_quality.return_value = QualityReport(split_escapes=5, split_sync_updates=0)
 
         with patch(f"{_PATCH_BASE}.os.unlink", side_effect=OSError("busy")):
             result = run_pipeline(cfg_path)

@@ -33,6 +33,7 @@ _CSI_PATTERN = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 # Match start of CSI without terminator (at end of string)
 _INCOMPLETE_CSI = re.compile(r"\x1b\[[0-9;?]*$")
 
+
 def validate_sequences(filepath: str) -> SequenceReport:
     """Check that escape sequences are complete within each event."""
     total = 0
