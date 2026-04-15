@@ -1,4 +1,4 @@
-version: 2.15.11
+version: 2.25.0
 project:
   name: cli-replay
   description: cli-replay project
@@ -10,6 +10,7 @@ workflow:
   context_dir: .paircoder/context
   plans_dir: .paircoder/plans
   tasks_dir: .paircoder/tasks
+  require_feature_branch: false
 pack:
   default_name: agent_pack.tgz
   excludes:
@@ -39,6 +40,7 @@ models:
       - claude-sonnet-4-5
       - claude-haiku-4-5
       default_effort: medium
+  nayru: claude-sonnet-4-6
 routing:
   by_complexity:
     trivial:
@@ -280,33 +282,36 @@ metrics:
 hooks:
   enabled: true
   on_task_ready:
-  - sync_trello
+  - sync_pm
   - update_state
+  - sync_trello
   on_task_start:
   - select_model
   - check_token_budget
   - start_timer
-  - sync_trello
+  - sync_pm
   - update_state
+  - sync_trello
   on_task_review:
-  - sync_trello
+  - sync_pm
   - update_state
+  - sync_trello
   on_task_complete:
   - arch_check_modified
   - contract_break_check
   - stop_timer
-  - record_token_usage
-  - apply_token_learning
   - workspace_impact_scan
   - telemetry_snapshot
   - calibration_update_incremental
   - feedback_calibrate
-  - sync_trello
+  - sync_pm
   - update_state
   - check_unblocked
-  on_task_block:
   - sync_trello
+  on_task_block:
+  - sync_pm
   - update_state
+  - sync_trello
 containment:
   enabled: false
   mode: strict
@@ -331,3 +336,6 @@ containment:
   - api.trello.com
   - github.com
   - pypi.org
+pm:
+  provider: none
+  workflow: simple
