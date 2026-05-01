@@ -1,4 +1,4 @@
-version: 2.25.2
+version: 2.25.3
 project:
   name: cli-replay
   description: cli-replay project
@@ -42,6 +42,9 @@ models:
       default_effort: medium
   nayru: claude-sonnet-4-6
   vaivora: claude-opus-4-6
+  bellona: claude-sonnet-4-6
+  divona: claude-sonnet-4-6
+  laverna: claude-sonnet-4-6
 routing:
   by_complexity:
     trivial:
