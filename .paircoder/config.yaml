@@ -1,4 +1,4 @@
-version: 2.26.1
+version: 2.27.1
 project:
   name: cli-replay
   description: cli-replay project
